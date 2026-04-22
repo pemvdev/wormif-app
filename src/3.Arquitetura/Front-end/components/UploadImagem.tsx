@@ -1,4 +1,3 @@
-// Component: UploadImagem
 import { useCallback, useRef } from 'react';
 import { Upload, ImageIcon, X } from 'lucide-react';
 import { Button } from '@Front-end/components/ui/button';

@@ -59,7 +59,7 @@ export default function DiagnosticoView() {
 
           <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">Wormif</h1>
           <p className="text-lg text-muted-foreground mt-4 max-w-md mx-auto">
-            Identificação de espécies em todos os estágios de vida usando inteligência artificial
+            Identificação morfológica por imagem ao longo do ciclo de vida
           </p>
 
           <div className="flex flex-wrap justify-center gap-3 mt-6">
@@ -122,7 +122,7 @@ export default function DiagnosticoView() {
 
         <footer className="mt-16 text-center space-y-2">
           <p className="text-sm text-muted-foreground">
-            Powered by IA • Identifica larvas, ninfas, pupas e formas adultas
+            Wormif • ovos, larvas, ninfas, pupas e formas adultas
           </p>
           <p className="text-xs text-muted-foreground/90 max-w-lg mx-auto leading-relaxed">
             Criadores: Matheus Oliveira, Pedro Valim, Thales Andre, Arthur e Ryan

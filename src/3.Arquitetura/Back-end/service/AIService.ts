@@ -167,11 +167,11 @@ function normalizeEstagio(raw: unknown): EstagioVida {
 }
 
 export class AIService {
-  private openai: OpenAI;
+  private client: OpenAI;
   private aiConfig: AIConfig;
 
   constructor(apiKey: string, aiConfig: AIConfig) {
-    this.openai = new OpenAI({
+    this.client = new OpenAI({
       apiKey,
       fetch: globalThis.fetch.bind(globalThis),
     });
@@ -180,7 +180,7 @@ export class AIService {
 
   async analisarImagem(imageBase64: string, mimeType: string): Promise<DiagnosticoResponseDTO> {
     try {
-      const completion = await this.openai.chat.completions.create({
+      const completion = await this.client.chat.completions.create({
         model: this.aiConfig.model,
         messages: [
           { role: 'system', content: this.aiConfig.systemInstruction },
@@ -189,7 +189,7 @@ export class AIService {
             content: [
               {
                 type: 'text',
-                text: 'Analise a imagem em detalhe. Preencha TODAS as chaves do JSON (especie, nomeComum, estagioVida, nivelConfianca, descricao, caracteristicas, habitat, cicloDeVida, proximoEstagio). Siga as regras do sistema; responda só com o objeto JSON.',
+                text: 'Analisa a imagem e devolve só o JSON pedido no prompt de sistema.',
               },
               {
                 type: 'image_url',
@@ -210,7 +210,7 @@ export class AIService {
       if (!parsedRoot) {
         return {
           success: false,
-          error: 'Não foi possível processar a resposta da IA',
+          error: 'Resposta inválida do serviço de inferência',
         };
       }
 
@@ -250,20 +250,14 @@ export class AIService {
       return {
         success: true,
         data: {
-          especie: especie || 'Indeterminado (ver descrição)',
-          nomeComum: nomeComum || 'Grupo ou estágio inferido pela morfologia',
+          especie: especie || 'Não determinado',
+          nomeComum: nomeComum || '—',
           estagioVida,
           nivelConfianca,
           descricao,
           caracteristicas,
-          habitat:
-            habitat ||
-            'Habitat típico não inferível só pela imagem; consulte a descrição e o grupo taxonómico sugerido.',
-          cicloDeVida:
-            cicloDeVida ||
-            (estagioVida !== 'desconhecido'
-              ? 'Ciclo completo depende do grupo: em insetos holometábolos típicos — ovo → larva → pupa → adulto; em hemimetábolos — ovo → ninfa → adulto. Ajuste ao grupo indicado na descrição.'
-              : ''),
+          habitat: habitat || '',
+          cicloDeVida: cicloDeVida || '',
           proximoEstagio: proximoRaw || undefined,
         },
       };

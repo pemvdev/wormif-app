@@ -1,12 +1,11 @@
-// Component: ResultadoDiagnostico
-import { 
-  Bug, 
-  Dna, 
-  MapPin, 
-  ArrowRight, 
-  CheckCircle2, 
-  Sparkles,
-  RefreshCw
+import {
+  Bug,
+  Dna,
+  MapPin,
+  ArrowRight,
+  CheckCircle2,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { Card } from '@Front-end/components/ui/card';
 import { Badge } from '@Front-end/components/ui/badge';
@@ -33,7 +32,7 @@ export function ResultadoDiagnostico({
           <div className="relative">
             <div className="absolute inset-0 animate-ping rounded-full bg-primary/30" />
             <div className="relative p-6 rounded-full bg-gradient-to-br from-primary to-accent">
-              <Sparkles className="w-10 h-10 text-white animate-pulse" />
+              <Loader2 className="w-10 h-10 text-white animate-spin" />
             </div>
           </div>
           <div className="text-center">
@@ -75,7 +74,6 @@ export function ResultadoDiagnostico({
 
   return (
     <div className="space-y-6">
-      {/* Header com espécie */}
       <Card className="p-6 bg-gradient-to-br from-card to-primary/5 border-primary/20">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
@@ -101,7 +99,6 @@ export function ResultadoDiagnostico({
           </Badge>
         </div>
 
-        {/* Nível de confiança */}
         <div className="mt-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-muted-foreground">
@@ -115,7 +112,6 @@ export function ResultadoDiagnostico({
         </div>
       </Card>
 
-      {/* Descrição */}
       <Card className="p-6 bg-card border-border">
         <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
           <Dna className="w-5 h-5 text-primary" />
@@ -126,7 +122,6 @@ export function ResultadoDiagnostico({
         </p>
       </Card>
 
-      {/* Características */}
       {data.caracteristicas.length > 0 && (
         <Card className="p-6 bg-card border-border">
           <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -144,7 +139,6 @@ export function ResultadoDiagnostico({
         </Card>
       )}
 
-      {/* Habitat */}
       {data.habitat && (
         <Card className="p-6 bg-card border-border">
           <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -157,7 +151,6 @@ export function ResultadoDiagnostico({
         </Card>
       )}
 
-      {/* Ciclo de vida */}
       {data.cicloDeVida && (
         <Card className="p-6 bg-gradient-to-br from-card to-accent/5 border-accent/20">
           <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -182,7 +175,6 @@ export function ResultadoDiagnostico({
         </Card>
       )}
 
-      {/* Botão nova análise */}
       <Button 
         onClick={onNovaAnalise} 
         size="lg" 
