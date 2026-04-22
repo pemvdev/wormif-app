@@ -1,5 +1,5 @@
 export class AIConfig {
-  readonly model = 'gemini-2.5-flash';
+  readonly model = 'gpt-4o-mini';
   readonly systemInstruction = `Você é um especialista em biologia e entomologia, com conhecimento profundo sobre ciclos de vida de espécies animais.
 
 Sua tarefa é analisar imagens de espécimes e identificar:

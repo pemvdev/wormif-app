@@ -1,45 +1,54 @@
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import type { AIConfig } from '../config/AIConfig';
 import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
 import type { EstagioVida } from '../model/Diagnostico';
 
 export class AIService {
-  private ai: GoogleGenAI;
+  private openai: OpenAI;
   private aiConfig: AIConfig;
 
   constructor(apiKey: string, aiConfig: AIConfig) {
-    this.ai = new GoogleGenAI({ apiKey });
+    this.openai = new OpenAI({
+      apiKey,
+      fetch: globalThis.fetch.bind(globalThis),
+    });
     this.aiConfig = aiConfig;
   }
 
   async analisarImagem(imageBase64: string, mimeType: string): Promise<DiagnosticoResponseDTO> {
     try {
-      const response = await this.ai.models.generateContent({
+      const completion = await this.openai.chat.completions.create({
         model: this.aiConfig.model,
-        contents: [
-          { text: 'Analise esta imagem e identifique a espécie e seu estágio de vida. Responda em JSON.' },
+        messages: [
+          { role: 'system', content: this.aiConfig.systemInstruction },
           {
-            inlineData: {
-              mimeType: mimeType,
-              data: imageBase64
-            }
-          }
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Analise esta imagem e identifique a espécie e seu estágio de vida. Responda apenas com um objeto JSON válido conforme o esquema indicado nas instruções do sistema.',
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mimeType};base64,${imageBase64}`,
+                },
+              },
+            ],
+          },
         ],
-        config: {
-          systemInstruction: this.aiConfig.systemInstruction,
-          temperature: this.aiConfig.temperature,
-          maxOutputTokens: this.aiConfig.maxOutputTokens,
-          responseMimeType: 'application/json'
-        }
+        temperature: this.aiConfig.temperature,
+        max_tokens: this.aiConfig.maxOutputTokens,
+        response_format: { type: 'json_object' },
       });
 
-      const text = response.text || '';
+      const text = completion.choices[0]?.message?.content ?? '';
       const jsonMatch = text.match(/\{[\s\S]*\}/);
 
       if (!jsonMatch) {
         return {
           success: false,
-          error: 'Não foi possível processar a resposta da IA'
+          error: 'Não foi possível processar a resposta da IA',
         };
       }
 
@@ -53,7 +62,7 @@ export class AIService {
         'juvenil',
         'subadulto',
         'adulto',
-        'desconhecido'
+        'desconhecido',
       ];
       const estagioVida = validEstagios.includes(parsed.estagioVida)
         ? parsed.estagioVida
@@ -70,14 +79,14 @@ export class AIService {
           caracteristicas: Array.isArray(parsed.caracteristicas) ? parsed.caracteristicas : [],
           habitat: parsed.habitat || '',
           cicloDeVida: parsed.cicloDeVida || '',
-          proximoEstagio: parsed.proximoEstagio
-        }
+          proximoEstagio: parsed.proximoEstagio,
+        },
       };
     } catch (error) {
       console.error('Erro ao analisar imagem:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido ao processar imagem'
+        error: error instanceof Error ? error.message : 'Erro desconhecido ao processar imagem',
       };
     }
   }
