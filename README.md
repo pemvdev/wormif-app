@@ -1,6 +1,6 @@
 # Wormif — Identificador de Estágios de Vida
 
-Monorepo Vite + React (cliente) e Hono no Cloudflare Worker (API). A análise de imagens usa um endpoint comercial multimodal; o modelo por omissão está em `src/3.Arquitetura/Back-end/config/AIConfig.ts`.
+Monorepo Vite + React (cliente) e Hono no Cloudflare Worker (API). O modelo por omissão está em `src/3.Arquitetura/Back-end/config/AIConfig.ts`.
 
 ## Requisitos
 
@@ -22,7 +22,7 @@ Crie `.dev.vars` na raiz (não versionado):
 OPENAI_API_KEY=...
 ```
 
-Pode partir de `.dev.vars.example`. Chaves: [documentação do fornecedor](https://platform.openai.com/api-keys).
+Pode partir de `.dev.vars.example`. A chave deve corresponder ao fornecedor configurado no código.
 
 ### Desenvolvimento
 

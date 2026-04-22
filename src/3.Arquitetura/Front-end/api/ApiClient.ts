@@ -1,4 +1,3 @@
-// API: ApiClient
 const API_BASE_URL = '/api';
 
 export class ApiClient {
