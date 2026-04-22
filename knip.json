@@ -1,0 +1,18 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/3.Arquitetura/Front-end/main.tsx",
+    "src/3.Arquitetura/Back-end/index.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": [
+    ".bun/**",
+    "dist/**",
+    "worker-configuration.d.ts",
+    "src/3.Arquitetura/Front-end/vite-env.d.ts"
+  ],
+  "ignoreDependencies": [
+    "@getmocha/vite-plugins",
+    "@getmocha/users-service"
+  ]
+}
