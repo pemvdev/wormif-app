@@ -1,74 +1,65 @@
 # Wormif — Identificador de Estágios de Vida
 
-Aplicação web (React + Vite) com API em [Hono](https://hono.dev/) sobre [Cloudflare Workers](https://workers.cloudflare.com/), que usa o Google Gemini para analisar imagens de espécimes e estimar espécie e estágio de vida (ovo, larva, ninfa, pupa, juvenil, adulto, etc.).
-
-Este repositório **não** depende de templates ou serviços externos do GetMocha; o build usa apenas `@cloudflare/vite-plugin`, React e a stack listada no `package.json`.
+Monorepo Vite + React (cliente) e Hono no Cloudflare Worker (API). O modelo por omissão está em `src/3.Arquitetura/Back-end/config/AIConfig.ts`.
 
 ## Requisitos
 
-- Node.js 20+ (recomendado LTS)
+- Node.js 20+
 - npm
-- Conta Google AI Studio ou credencial com acesso à API Gemini (para a chave usada em desenvolvimento e deploy)
+- `OPENAI_API_KEY` com acesso ao modelo configurado no projeto
 
-## Instalação e execução local
+## Instalação
 
 ```bash
 npm install
 ```
 
-### Segredo da API (obrigatório para diagnóstico com IA)
+### Variáveis locais
 
-O worker lê `GEMINI_API_KEY` a partir dos bindings do Cloudflare. Em desenvolvimento local, o Wrangler carrega variáveis do ficheiro **`.dev.vars`** na raiz do projeto (este ficheiro está no `.gitignore` e não deve ser commitado).
+Crie `.dev.vars` na raiz (não versionado):
 
-1. Copie o modelo e preencha a chave (o ficheiro `.dev.vars` não deve ir para o Git):
+```
+OPENAI_API_KEY=...
+```
 
-   ```bash
-   copy .dev.vars.example .dev.vars
-   ```
+Pode partir de `.dev.vars.example`. A chave deve corresponder ao fornecedor configurado no código.
 
-   Edite `.dev.vars` e defina `GEMINI_API_KEY=sua_chave_aqui` (em macOS/Linux use `cp` em vez de `copy`).
-
-2. Obtenha uma chave em [Google AI Studio](https://aistudio.google.com/apikey) (ou no fluxo de API que a equipa utilizar).
-
-### Servidor de desenvolvimento
+### Desenvolvimento
 
 ```bash
 npm run dev
 ```
 
-O Vite arranca o front-end e integra o worker conforme `vite.config.ts` e `wrangler.json`.
-
-## Scripts npm
+## Scripts
 
 | Comando | Descrição |
 |--------|-------------|
-| `npm run dev` | Servidor de desenvolvimento |
-| `npm run build` | `tsc -b` + build de produção (cliente + worker) |
-| `npm run check` | Typecheck, build e `wrangler deploy --dry-run` |
+| `npm run dev` | Dev server |
+| `npm run build` | Typecheck + build |
+| `npm run check` | Typecheck, build, `wrangler deploy --dry-run` |
 | `npm run lint` | ESLint |
-| `npm run knip` | Análise de dependências e ficheiros não usados |
-| `npm run cf-typegen` | Gera tipos do Wrangler (`worker-configuration.d.ts`) |
+| `npm run knip` | Knip |
+| `npm run cf-typegen` | Tipos Wrangler |
 
-## Estrutura principal
+## Estrutura
 
-- `src/3.Arquitetura/Front-end` — React, componentes UI, views e cliente HTTP
-- `src/3.Arquitetura/Back-end` — Hono, controladores, serviços (IA, armazenamento), DTOs
-- `wrangler.json` — nome do worker, `main`, D1, R2 e serviços Cloudflare
-- `index.html` — entrada HTML da SPA
+- `src/3.Arquitetura/Front-end` — UI
+- `src/3.Arquitetura/Back-end` — API Hono, serviços, DTOs
+- `wrangler.json` — Worker, assets, D1, R2
 
-A API de diagnóstico expõe rotas sob `/api/diagnostico` (ver `DiagnosticoController.ts`).
+Rotas de diagnóstico: `/api/diagnostico` (ver `DiagnosticoController.ts`).
 
-## Deploy (Cloudflare)
+## Deploy
 
-- Configure segredos no ambiente Cloudflare, por exemplo: `wrangler secret put GEMINI_API_KEY`
-- Ajuste `wrangler.json` (nome do worker, IDs de D1/R2, serviços) para o ambiente alvo
-- `npm run build` e de seguida o fluxo de deploy da equipa (por exemplo `wrangler deploy`)
+- `wrangler secret put OPENAI_API_KEY`
+- Ajustar `wrangler.json` ao ambiente
+- `npm run build` e `wrangler deploy` (ou pipeline da equipa)
 
 ## Resolução de problemas
 
-- **Diagnóstico falha ou 500 na API:** confirme que `GEMINI_API_KEY` está definida em `.dev.vars` (local) ou nos secrets do Worker (produção).
-- **Erros de tipos do Worker:** execute `npm run cf-typegen` após alterar `wrangler.json` ou bindings.
+- Falhas na rota de análise: verificar `OPENAI_API_KEY` em `.dev.vars` ou secrets do Worker.
+- Tipos do Worker: `npm run cf-typegen` após alterar bindings.
 
-## Licença e contribuição
+## Licença
 
-Conforme políticas do repositório / organização (WRIF / Ziros).
+Conforme política do repositório / WRIF / Ziros.

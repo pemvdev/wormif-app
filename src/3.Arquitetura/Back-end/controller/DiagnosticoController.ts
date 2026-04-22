@@ -13,7 +13,7 @@ const diagnosticoController = new Hono<{
 }>();
 
 diagnosticoController.post('/analisar', uploadMiddleware, async (c) => {
-  const apiKey = c.env.GEMINI_API_KEY;
+  const apiKey = c.env.OPENAI_API_KEY;
 
   if (!apiKey) {
     return c.json({ success: false, error: 'API key não configurada' }, 500);
