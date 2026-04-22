@@ -10,9 +10,5 @@
     "dist/**",
     "worker-configuration.d.ts",
     "src/3.Arquitetura/Front-end/vite-env.d.ts"
-  ],
-  "ignoreDependencies": [
-    "@getmocha/vite-plugins",
-    "@getmocha/users-service"
   ]
 }
