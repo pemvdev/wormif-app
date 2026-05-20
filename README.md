@@ -48,6 +48,31 @@ O Vite arranca o front-end e integra o worker conforme `vite.config.ts` e `wrang
 | `npm run lint` | ESLint |
 | `npm run knip` | Análise de dependências e ficheiros não usados |
 | `npm run cf-typegen` | Gera tipos do Wrangler (`worker-configuration.d.ts`) |
+| `npm run test:e2e` | Testes E2E com Playwright (*Manter Diagnóstico* + *Processar Diagnóstico*) |
+| `npm run test:e2e:ui` | Playwright em modo interativo |
+| `npm run test:e2e:report` | Abre o relatório HTML do último run |
+
+## Testes automatizados (Playwright)
+
+| Ficheiro | Plano de testes |
+|----------|-----------------|
+| `test/e2e/manter-diagnostico.spec.ts` | **Manter Diagnóstico** (UI, 7 cenários) |
+| `test/e2e/processar-diagnostico.spec.ts` | **Processar Diagnóstico** (API, 3 cenários) |
+
+Configuração Playwright: `test/playwright.config.ts`. Fixtures em `test/e2e/fixtures/`.
+
+```bash
+npm install
+npx playwright install chromium   # primeira vez
+npm run test:e2e
+```
+
+O `test/playwright.config.ts` sobe o `npm run dev` automaticamente (raiz do projeto).
+
+- **Manter Diagnóstico:** o cenário 5 da UI usa **mock** da API; o cenário 7 está `skip` (exclusão ainda não existe na interface).
+- **Processar Diagnóstico:** cenários 2 e 3 chamam a API real (`POST /api/diagnostico/analisar`) e exigem `GEMINI_API_KEY` em `.dev.vars`; sem chave, ficam `skip`. O plano menciona CNN; na implementação o processamento usa **Gemini** (`AIService`).
+
+**Nota:** login e `diagnostico-test-data.sql` do plano ainda não se aplicam a esta app.
 
 ## Estrutura principal
 
