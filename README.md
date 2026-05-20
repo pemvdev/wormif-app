@@ -51,10 +51,10 @@ npm run dev
 
 | Ficheiro | Plano de testes |
 |----------|-----------------|
-| `test/e2e/manter-diagnostico.spec.ts` | **Manter Diagnóstico** (UI, 7 cenários) |
-| `test/e2e/processar-diagnostico.spec.ts` | **Processar Diagnóstico** (API, 3 cenários) |
+| `src/4.Teste/test/e2e/manter-diagnostico.spec.ts` | **Manter Diagnóstico** (UI, 7 cenários) |
+| `src/4.Teste/test/e2e/processar-diagnostico.spec.ts` | **Processar Diagnóstico** (API, 3 cenários) |
 
-Configuração Playwright: `test/playwright.config.ts`. Fixtures em `test/e2e/fixtures/`.
+Configuração Playwright: `src/4.Teste/test/playwright.config.ts`. Fixtures em `src/4.Teste/test/e2e/fixtures/`.
 
 ```bash
 npm install
@@ -62,16 +62,14 @@ npx playwright install chromium   # primeira vez
 npm run test:e2e
 ```
 
-O `test/playwright.config.ts` sobe o `npm run dev` automaticamente (raiz do projeto).
+O `src/4.Teste/test/playwright.config.ts` sobe o `npm run dev` automaticamente (raiz do projeto).
 
 - **Manter Diagnóstico:** o cenário 5 da UI usa **mock** da API; o cenário 7 está `skip` (exclusão ainda não existe na interface).
 - **Processar Diagnóstico:** cenários 2 e 3 chamam a API real (`POST /api/diagnostico/analisar`) e exigem `GEMINI_API_KEY` em `.dev.vars`; sem chave, ficam `skip`. O plano menciona CNN; na implementação o processamento usa **Gemini** (`AIService`).
 
 **Nota:** login e `diagnostico-test-data.sql` do plano ainda não se aplicam a esta app.
-=======
 | `npm run knip` | Knip |
 | `npm run cf-typegen` | Tipos Wrangler |
->>>>>>> 7096b56802a97f39ddea5d60180d63d2de021044
 
 ## Estrutura
 
