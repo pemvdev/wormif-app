@@ -13,7 +13,7 @@ const diagnosticoController = new Hono<{
 }>();
 
 diagnosticoController.post('/analisar', uploadMiddleware, async (c) => {
-  const apiKey = c.env.GEMINI_API_KEY;
+  const apiKey = c.env.OPENAI_API_KEY;
 
   if (!apiKey) {
     return c.json({ success: false, error: 'API key não configurada' }, 500);
@@ -22,7 +22,7 @@ diagnosticoController.post('/analisar', uploadMiddleware, async (c) => {
   try {
     const body = c.get('uploadDto');
 
-    const diagnosticoRepository = new DiagnosticoRepository();
+    const diagnosticoRepository = new DiagnosticoRepository(c.env.DB);
     const storageService = new StorageService();
     const aiService = new AIService(apiKey, new AIConfig());
     const diagnosticoService = new DiagnosticoService(
