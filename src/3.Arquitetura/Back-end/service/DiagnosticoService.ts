@@ -29,9 +29,8 @@ export class DiagnosticoService {
     const resultado = await this.aiService.analisarImagem(upload.imageBase64, upload.mimeType);
 
     if (resultado.success && resultado.data) {
-      const id = this.diagnosticoRepository.proximoId();
       const diagnostico = new Diagnostico(
-        id,
+        0,
         new Date().toISOString(),
         'processando',
         resultado.data.nivelConfianca,
@@ -44,7 +43,7 @@ export class DiagnosticoService {
         resultado.data.habitat
       );
       diagnostico.processar();
-      this.diagnosticoRepository.salvar(diagnostico);
+      await this.diagnosticoRepository.salvar(diagnostico);
     }
 
     return resultado;

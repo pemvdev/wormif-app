@@ -37,6 +37,8 @@ npm run dev
 | `npm run dev` | Dev server |
 | `npm run build` | Typecheck + build |
 | `npm run check` | Typecheck, build, `wrangler deploy --dry-run` |
+| `npm run db:migrate:local` | Cria/atualiza localmente a estrutura D1 do diagnóstico |
+| `npm run db:seed:diagnostico:test` | Executa a massa SQL local do caso de uso de diagnóstico no D1 |
 | `npm run lint` | ESLint |
 | `npm run knip` | Knip |
 | `npm run cf-typegen` | Tipos Wrangler |

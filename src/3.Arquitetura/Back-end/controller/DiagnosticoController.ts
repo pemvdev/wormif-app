@@ -22,7 +22,7 @@ diagnosticoController.post('/analisar', uploadMiddleware, async (c) => {
   try {
     const body = c.get('uploadDto');
 
-    const diagnosticoRepository = new DiagnosticoRepository();
+    const diagnosticoRepository = new DiagnosticoRepository(c.env.DB);
     const storageService = new StorageService();
     const aiService = new AIService(apiKey, new AIConfig());
     const diagnosticoService = new DiagnosticoService(
