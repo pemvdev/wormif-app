@@ -3,7 +3,7 @@ node_modules/
 .wrangler/
 .dev.vars
 worker-configuration.d.ts
-/src/4.Teste/test/test-results/
-/src/4.Teste/test/playwright-report/
-/src/4.Teste/test/blob-report/
-/src/4.Teste/test/playwright/.cache/
+/src/4.Teste/test-results/
+/src/4.Teste/playwright-report/
+/src/4.Teste/blob-report/
+/src/4.Teste/playwright/.cache/

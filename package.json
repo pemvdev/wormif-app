@@ -49,8 +49,8 @@
     "dev": "vite",
     "knip": "knip",
     "lint": "eslint .",
-    "test:e2e": "playwright test --config src/4.Teste/test/playwright.config.ts",
-    "test:e2e:ui": "playwright test --config src/4.Teste/test/playwright.config.ts --ui",
-    "test:e2e:report": "playwright show-report src/4.Teste/test/playwright-report"
+    "test:e2e": "playwright test --config src/4.Teste/playwright.config.ts",
+    "test:e2e:ui": "playwright test --config src/4.Teste/playwright.config.ts --ui",
+    "test:e2e:report": "playwright show-report src/4.Teste/playwright-report"
   }
 }

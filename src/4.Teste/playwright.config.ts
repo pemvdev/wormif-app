@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
 
 const testRoot = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(testRoot, '../../..');
+const projectRoot = path.resolve(testRoot, '../..');
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
 
 export default defineConfig({
