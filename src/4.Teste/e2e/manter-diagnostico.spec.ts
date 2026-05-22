@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
   FIXTURES,
+  loginAsTestUser,
   mockDiagnosticoApi,
   removeImageButton,
   uploadImage
@@ -8,13 +9,13 @@ import {
 
 test.describe('Manter Diagnóstico', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await loginAsTestUser(page);
   });
 
   test('1 — adicionar imagem fotografada (.png ou .jpg)', async ({ page }) => {
     await uploadImage(page, FIXTURES.png);
     await expect(page.getByText('Imagem carregada')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Identificar Espécie' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continuar para identificação' })).toBeVisible();
   });
 
   test('2 — arquivo com formato não suportado (.pdf)', async ({ page }) => {
@@ -45,9 +46,8 @@ test.describe('Manter Diagnóstico', () => {
     await mockDiagnosticoApi(page);
     await uploadImage(page, FIXTURES.png);
 
-    await page.getByRole('button', { name: 'Identificar Espécie' }).click();
-
-    await expect(page.getByText('Espécie Identificada')).toBeVisible();
+    await page.getByRole('button', { name: 'Continuar para identificação' }).click();
+    await expect(page.getByText('Espécie Identificada')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText('Tenebrio molitor')).toBeVisible();
     await expect(page.getByText('Bicho-da-farinha')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Descrição' })).toBeVisible();
@@ -59,8 +59,8 @@ test.describe('Manter Diagnóstico', () => {
   test('6 — iniciar nova análise', async ({ page }) => {
     await mockDiagnosticoApi(page);
     await uploadImage(page, FIXTURES.png);
-    await page.getByRole('button', { name: 'Identificar Espécie' }).click();
-    await expect(page.getByText('Espécie Identificada')).toBeVisible();
+    await page.getByRole('button', { name: 'Continuar para identificação' }).click();
+    await expect(page.getByText('Espécie Identificada')).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole('button', { name: 'Nova Análise' }).click();
 
@@ -68,8 +68,10 @@ test.describe('Manter Diagnóstico', () => {
     await expect(page.getByText('Espécie Identificada')).not.toBeVisible();
   });
 
-  test.skip('7 — excluir diagnóstico', async () => {
-    // Plano de testes: selecionar diagnóstico e "Excluir Análise" → "Análise excluída".
-    // A UI atual não expõe listagem nem exclusão de análises salvas.
+  test('7 — excluir diagnóstico', async ({ page }) => {
+    await page.goto('/historico');
+    await page.getByRole('button', { name: 'Excluir Análise' }).first().click();
+    await page.getByRole('button', { name: 'Excluir' }).click();
+    await expect(page.getByText('Análise excluída')).toBeVisible();
   });
 });

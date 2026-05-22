@@ -40,12 +40,28 @@ npm run dev
 | `npm run db:migrate:local` | Cria/atualiza localmente a estrutura D1 do diagnóstico |
 | `npm run db:seed:diagnostico:test` | Executa a massa SQL local do caso de uso de diagnóstico no D1 |
 | `npm run lint` | ESLint |
-<<<<<<< HEAD
-| `npm run knip` | Análise de dependências e ficheiros não usados |
-| `npm run cf-typegen` | Gera tipos do Wrangler (`worker-configuration.d.ts`) |
-| `npm run test:e2e` | Testes E2E com Playwright (*Manter Diagnóstico* + *Processar Diagnóstico*) |
-| `npm run test:e2e:ui` | Playwright em modo interativo |
-| `npm run test:e2e:report` | Abre o relatório HTML do último run |
+| `npm run knip` | Knip |
+| `npm run cf-typegen` | Tipos Wrangler |
+| `npm run test:e2e` | Playwright E2E |
+| `npm run test:e2e:ui` | Playwright UI |
+| `npm run test:e2e:report` | Relatório HTML |
+
+## Telas (10 requisitos funcionais)
+
+| # | Requisito | Rota |
+|---|-----------|------|
+| 1 | Cadastro | `/cadastro` |
+| 2 | Login | `/login` |
+| 3 | Upload de imagens | `/upload` |
+| 4 | Identificação por IA | `/identificacao` |
+| 5 | Exibição dos resultados | `/resultado` |
+| 6 | Histórico | `/historico` |
+| 7 | Perfil | `/perfil` |
+| 8 | Configurações | `/configuracoes` |
+| 9 | Geolocalização | `/geolocalizacao` |
+| 10 | Planos | `/planos` |
+
+Fluxo de análise: **Upload → Identificação IA → Resultado** (stepper no topo).
 
 ## Testes automatizados (Playwright)
 
@@ -64,12 +80,8 @@ npm run test:e2e
 
 O `src/4.Teste/playwright.config.ts` sobe o `npm run dev` automaticamente (raiz do projeto).
 
-- **Manter Diagnóstico:** o cenário 5 da UI usa **mock** da API; o cenário 7 está `skip` (exclusão ainda não existe na interface).
-- **Processar Diagnóstico:** cenários 2 e 3 chamam a API real (`POST /api/diagnostico/analisar`) e exigem `GEMINI_API_KEY` em `.dev.vars`; sem chave, ficam `skip`. O plano menciona CNN; na implementação o processamento usa **Gemini** (`AIService`).
-
-**Nota:** login e `diagnostico-test-data.sql` do plano ainda não se aplicam a esta app.
-| `npm run knip` | Knip |
-| `npm run cf-typegen` | Tipos Wrangler |
+- **Manter Diagnóstico:** cenário 5 percorre upload → identificação (mock API) → resultado; cenário 7 exclui no histórico.
+- **Processar Diagnóstico:** API em `/api/diagnostico/analisar`.
 
 ## Estrutura
 

@@ -10,6 +10,14 @@ export const FIXTURES = {
   pdf: path.join(fixturesDir, 'document.pdf')
 } as const;
 
+export async function loginAsTestUser(page: Page): Promise<void> {
+  await page.goto('/login');
+  await page.getByLabel('E-mail').fill('teste@wormif.app');
+  await page.getByLabel('Senha').fill('senha123');
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await page.waitForURL('**/upload');
+}
+
 export async function uploadImage(page: Page, filePath: string): Promise<void> {
   await page.locator('input[type="file"]').setInputFiles(filePath);
 }
