@@ -23,7 +23,7 @@ import { useApp } from '@Front-end/context/AppContext';
 import { analisarImagemComFallback } from '@Front-end/service/analisarImagemComFallback';
 import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { ANALYSIS_FLOW_MESSAGES } from '@Front-end/utils/analysisFlowNav';
-import type { DiagnosticoResponseDTO } from '@Front-end/dto/DiagnosticoResponseDTO';
+import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO-Front';
 
 type AnalysisPhase = 'analyzing' | 'complete' | 'error';
 

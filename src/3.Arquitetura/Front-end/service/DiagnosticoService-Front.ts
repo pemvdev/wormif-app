@@ -1,6 +1,6 @@
 import { ApiClient } from '../api/ApiClient';
-import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
-import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
+import type { UploadImagemDTO } from '../dto/UploadImagemDTO-Front';
+import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO-Front';
 
 export class DiagnosticoService {
   private apiClient: typeof ApiClient;

@@ -1,4 +1,4 @@
-import type { DiagnosticoResponseDTO } from '@Front-end/dto/DiagnosticoResponseDTO';
+import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO-Front';
 import type { AnalysisHistoryItem } from '@Front-end/context/AppContext';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -9,7 +9,7 @@ const mockCatalog: DiagnosticoResponseDTO[] = [
     data: {
       especie: 'Tenebrio molitor',
       nomeComum: 'Bicho-da-farinha',
-      estagioVida: 'larva',
+      diagnosticoFront: 'larva',
       nivelConfianca: 0.92,
       descricao:
         'Larva de coleóptero com corpo segmentado, coloração amarelada e exoesqueleto rígido.',
@@ -24,7 +24,7 @@ const mockCatalog: DiagnosticoResponseDTO[] = [
     data: {
       especie: 'Spodoptera frugiperda',
       nomeComum: 'Lagarta-do-cartucho',
-      estagioVida: 'larva',
+      diagnosticoFront: 'larva',
       nivelConfianca: 0.88,
       descricao: 'Lagarta com listras longitudinais e hábito de alimentar-se do cartucho do milho.',
       caracteristicas: ['Máculas dorsais', 'Alto potencial de dano em culturas'],
@@ -47,12 +47,12 @@ export function historyItemToResultado(item: AnalysisHistoryItem): DiagnosticoRe
     data: {
       especie: item.especie,
       nomeComum: item.nomeComum,
-      estagioVida: item.estagioVida,
+      diagnosticoFront: item.diagnosticoFront,
       nivelConfianca: item.nivelConfianca,
       descricao: `Análise registrada em ${new Date(item.createdAt).toLocaleString('pt-BR')}. Espécime identificado como ${item.nomeComum}.`,
       caracteristicas: [
         'Registro recuperado do histórico local',
-        `Estágio: ${item.estagioVida}`,
+        `Estágio: ${item.diagnosticoFront}`,
         `Confiança da IA: ${Math.round(item.nivelConfianca * 100)}%`
       ],
       habitat: item.localizacao

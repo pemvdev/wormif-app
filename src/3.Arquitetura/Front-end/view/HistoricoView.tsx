@@ -8,7 +8,7 @@ import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { useApp } from '@Front-end/context/AppContext';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { historyItemToResultado } from '@Front-end/service/MockDiagnosticoService';
-import { estagioVidaLabels } from '@Front-end/model/Diagnostico';
+import { diagnosticoFrontLabels } from '@/3.Arquitetura/Front-end/model/Diagnostico-Front';
 import { Card } from '@Front-end/components/ui/card';
 import { Button } from '@Front-end/components/ui/button';
 import { Input } from '@Front-end/components/ui/input';
@@ -45,7 +45,7 @@ export default function HistoricoView() {
     return (
       item.especie.toLowerCase().includes(q) ||
       item.nomeComum.toLowerCase().includes(q) ||
-      estagioVidaLabels[item.estagioVida].toLowerCase().includes(q)
+      diagnosticoFrontLabels[item.diagnosticoFront].toLowerCase().includes(q)
     );
   });
 
@@ -115,7 +115,7 @@ export default function HistoricoView() {
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <h2 className="text-lg font-semibold italic truncate">{item.especie}</h2>
                       <Badge variant="secondary">
-                        {estagioVidaLabels[item.estagioVida]}
+                        {diagnosticoFrontLabels[item.diagnosticoFront]}
                       </Badge>
                     </div>
                     <p className="text-muted-foreground">{item.nomeComum}</p>

@@ -11,8 +11,8 @@ import { Card } from '@Front-end/components/ui/card';
 import { Badge } from '@Front-end/components/ui/badge';
 import { Progress } from '@Front-end/components/ui/progress';
 import { Button } from '@Front-end/components/ui/button';
-import type { DiagnosticoResponseDTO } from '@Front-end/dto/DiagnosticoResponseDTO';
-import { estagioVidaLabels, type EstagioVida } from '@Front-end/model/Diagnostico';
+import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO-Front';
+import { diagnosticoFrontLabels, type DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico-Front';
 
 interface ResultadoDiagnosticoProps {
   resultado: DiagnosticoResponseDTO | null;
@@ -92,10 +92,10 @@ export function ResultadoDiagnostico({
           </div>
           
           <Badge 
-            variant={data.estagioVida === 'desconhecido' ? 'secondary' : 'default'}
+            variant={data.diagnosticoFront === 'desconhecido' ? 'secondary' : 'default'}
             className="text-sm px-4 py-2 bg-secondary text-secondary-foreground"
           >
-            {estagioVidaLabels[data.estagioVida as EstagioVida] || data.estagioVida}
+            {diagnosticoFrontLabels[data.diagnosticoFront as DiagnosticoFront] || data.diagnosticoFront}
           </Badge>
         </div>
 

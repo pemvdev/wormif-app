@@ -9,7 +9,7 @@ import { Card } from '@Front-end/components/ui/card';
 import { Label } from '@Front-end/components/ui/label';
 import { Switch } from '@Front-end/components/ui/switch';
 import { Button } from '@Front-end/components/ui/button';
-import { estagioVidaLabels } from '@Front-end/model/Diagnostico';
+import { diagnosticoFrontLabels } from '@/3.Arquitetura/Front-end/model/Diagnostico-Front';
 
 export default function GeolocalizacaoView() {
   const { settings, updateSettings, history, resolveMockLocation, showToast } = useApp();
@@ -141,7 +141,7 @@ export default function GeolocalizacaoView() {
                 <div>
                   <p className="font-medium italic">{item.especie}</p>
                   <p className="text-sm text-muted-foreground">
-                    {estagioVidaLabels[item.estagioVida]} ·{' '}
+                    {diagnosticoFrontLabels[item.diagnosticoFront]} ·{' '}
                     {new Date(item.createdAt).toLocaleDateString('pt-BR')}
                   </p>
                 </div>

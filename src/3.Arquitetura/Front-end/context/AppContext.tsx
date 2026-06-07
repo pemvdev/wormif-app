@@ -7,8 +7,8 @@ import {
   useState,
   type ReactNode
 } from 'react';
-import type { EstagioVida } from '@Front-end/model/Diagnostico';
-import type { DiagnosticoResponseDTO } from '@Front-end/dto/DiagnosticoResponseDTO';
+import type { DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico-Front';
+import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO-Front';
 
 export interface User {
   id: string;
@@ -21,7 +21,7 @@ export interface AnalysisHistoryItem {
   createdAt: string;
   especie: string;
   nomeComum: string;
-  estagioVida: EstagioVida;
+  diagnosticoFront: DiagnosticoFront;
   nivelConfianca: number;
   localizacao?: {
     lat: number;
@@ -98,7 +98,7 @@ const seedHistory: AnalysisHistoryItem[] = [
     createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
     especie: 'Spodoptera frugiperda',
     nomeComum: 'Lagarta-do-cartucho',
-    estagioVida: 'larva',
+    diagnosticoFront: 'larva',
     nivelConfianca: 0.88,
     localizacao: { lat: -19.92, lng: -43.94, label: 'Contagem, MG' }
   },
@@ -107,7 +107,7 @@ const seedHistory: AnalysisHistoryItem[] = [
     createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
     especie: 'Diabrotica speciosa',
     nomeComum: 'Vaquinha',
-    estagioVida: 'adulto',
+    diagnosticoFront: 'adulto',
     nivelConfianca: 0.91,
     localizacao: { lat: -21.76, lng: -43.35, label: 'Juiz de Fora, MG' }
   }
@@ -234,7 +234,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString(),
         especie: result.data.especie,
         nomeComum: result.data.nomeComum,
-        estagioVida: result.data.estagioVida,
+        diagnosticoFront: result.data.diagnosticoFront,
         nivelConfianca: result.data.nivelConfianca,
         localizacao: location
       };
