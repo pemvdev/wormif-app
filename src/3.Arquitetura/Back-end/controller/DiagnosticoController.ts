@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { AIConfig } from '../config/AIConfig';
-import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
+import type { UploadImagemDTO } from '../dto/UploadImagemDTO-Back';
 import { uploadMiddleware } from '../middleware/UploadMiddleware';
 import { DiagnosticoRepository } from '../repository/DiagnosticoRepository';
 import { AIService } from '../service/AIService';
-import { DiagnosticoService } from '../service/DiagnosticoService';
+import { DiagnosticoService } from '../service/DiagnosticoService-Back';
 import { StorageService } from '../service/StorageService';
 
 const diagnosticoController = new Hono<{

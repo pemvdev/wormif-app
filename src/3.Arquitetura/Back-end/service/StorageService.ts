@@ -1,5 +1,5 @@
-import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
-import { validateBase64PayloadSize, validateMimeType } from '../utils/FileValidator';
+import type { UploadImagemDTO } from '../dto/UploadImagemDTO-Back';
+import { validateBase64PayloadSize, validateMimeType } from '../utils/FileValidator-Back';
 
 export type StorageValidationResult =
   | { ok: true }

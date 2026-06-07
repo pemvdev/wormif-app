@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import type { AIConfig } from '../config/AIConfig';
-import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
-import type { EstagioVida } from '../model/Diagnostico';
+import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO-Back';
+import type { DiagnosticoBack } from '../model/Diagnostico-Back';
 
 const UNKNOWN_SPECIES = new Set(
   [
@@ -73,9 +73,9 @@ const KEY_ALIASES: [string, keyof NormalizedShape][] = [
   ['commonName', 'nomeComum'],
   ['nome_popular', 'nomeComum'],
   ['nomePopular', 'nomeComum'],
-  ['life_stage', 'estagioVida'],
-  ['lifeStage', 'estagioVida'],
-  ['estágioVida', 'estagioVida'],
+  ['life_stage', 'diagnosticoBack'],
+  ['lifeStage', 'diagnosticoBack'],
+  ['diagnosticoBack', 'diagnosticoBack'],
   ['confidence', 'nivelConfianca'],
   ['confidence_level', 'nivelConfianca'],
   ['nivel_confianca', 'nivelConfianca'],
@@ -93,7 +93,7 @@ const KEY_ALIASES: [string, keyof NormalizedShape][] = [
 type NormalizedShape = {
   especie?: unknown;
   nomeComum?: unknown;
-  estagioVida?: unknown;
+  diagnosticoBack?: unknown;
   nivelConfianca?: unknown;
   descricao?: unknown;
   caracteristicas?: unknown;
@@ -106,7 +106,7 @@ function collectCanonicalFields(flat: Record<string, unknown>): NormalizedShape 
   const out: NormalizedShape = {
     especie: flat.especie,
     nomeComum: flat.nomeComum,
-    estagioVida: flat.estagioVida,
+    diagnosticoBack: flat.diagnosticoBack,
     nivelConfianca: flat.nivelConfianca,
     descricao: flat.descricao,
     caracteristicas: flat.caracteristicas,
@@ -147,8 +147,8 @@ function asNonEmptyString(value: unknown): string {
   return value.trim();
 }
 
-function normalizeEstagio(raw: unknown): EstagioVida {
-  const valid: EstagioVida[] = [
+function normalizeEstagio(raw: unknown): DiagnosticoBack {
+  const valid: DiagnosticoBack[] = [
     'ovo',
     'larva',
     'ninfa',
@@ -163,7 +163,7 @@ function normalizeEstagio(raw: unknown): EstagioVida {
     .toLowerCase()
     .normalize('NFD')
     .replace(/\p{M}/gu, '');
-  return valid.includes(s as EstagioVida) ? (s as EstagioVida) : 'desconhecido';
+  return valid.includes(s as DiagnosticoBack) ? (s as DiagnosticoBack) : 'desconhecido';
 }
 
 export class AIService {
@@ -226,7 +226,7 @@ export class AIService {
         nomeComum = '';
       }
 
-      const estagioVida = normalizeEstagio(n.estagioVida);
+      const diagnosticoBack = normalizeEstagio(n.diagnosticoBack);
       const nivelConfianca = parseConfidence(n.nivelConfianca);
       const descricao = asNonEmptyString(n.descricao);
       let habitat = asNonEmptyString(n.habitat);
@@ -252,7 +252,7 @@ export class AIService {
         data: {
           especie: especie || 'Não determinado',
           nomeComum: nomeComum || '—',
-          estagioVida,
+          diagnosticoBack,
           nivelConfianca,
           descricao,
           caracteristicas,

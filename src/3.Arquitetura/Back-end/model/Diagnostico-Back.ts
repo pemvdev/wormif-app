@@ -1,6 +1,6 @@
 export type StatusDiagnostico = 'processando' | 'concluido' | 'erro';
 
-export type EstagioVida =
+export type DiagnosticoBack =
   | 'ovo'
   | 'larva'
   | 'ninfa'
@@ -10,7 +10,7 @@ export type EstagioVida =
   | 'adulto'
   | 'desconhecido';
 
-export const estagioVidaLabels: Record<EstagioVida, string> = {
+export const diagnosticoBackLabels: Record<DiagnosticoBack, string> = {
   ovo: 'Ovo',
   larva: 'Larva',
   ninfa: 'Ninfa',
@@ -27,7 +27,7 @@ export class Diagnostico {
     public data: string,
     public status: StatusDiagnostico,
     public nivelConfianca: number,
-    public estagioVida: EstagioVida,
+    public diagnosticoBack: DiagnosticoBack,
     public validadoPorEspecialista: boolean,
     public especie: string,
     public nomeComum: string,

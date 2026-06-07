@@ -1,11 +1,11 @@
-import { Diagnostico, type EstagioVida, type StatusDiagnostico } from '../model/Diagnostico';
+import { Diagnostico, type DiagnosticoBack, type StatusDiagnostico } from '../model/Diagnostico-Back';
 
 type DiagnosticoRow = {
   id: number;
   diagnostic_date: string;
   status: StatusDiagnostico;
   confidence_level: number;
-  life_stage: EstagioVida;
+  life_stage: DiagnosticoBack;
   validated_by_specialist: number;
   species: string;
   common_name: string;
@@ -55,7 +55,7 @@ export class DiagnosticoRepository {
         diagnostico.data,
         diagnostico.status,
         diagnostico.nivelConfianca,
-        diagnostico.estagioVida,
+        diagnostico.diagnosticoBack,
         diagnostico.validadoPorEspecialista ? 1 : 0,
         diagnostico.especie,
         diagnostico.nomeComum,

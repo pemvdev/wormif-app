@@ -1,4 +1,4 @@
-import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
+import type { UploadImagemDTO } from '../dto/UploadImagemDTO-Back';
 
 export const ALLOWED_MIME_TYPES = [
   'image/jpeg',

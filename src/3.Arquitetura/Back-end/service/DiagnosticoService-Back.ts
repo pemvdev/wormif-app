@@ -1,6 +1,6 @@
-import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
-import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
-import { Diagnostico } from '../model/Diagnostico';
+import type { UploadImagemDTO } from '../dto/UploadImagemDTO-Back';
+import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO-Back';
+import { Diagnostico } from '../model/Diagnostico-Back';
 import { DiagnosticoRepository } from '../repository/DiagnosticoRepository';
 import { AIService } from './AIService';
 import { StorageService } from './StorageService';
@@ -34,7 +34,7 @@ export class DiagnosticoService {
         new Date().toISOString(),
         'processando',
         resultado.data.nivelConfianca,
-        resultado.data.estagioVida,
+        resultado.data.diagnosticoBack,
         false,
         resultado.data.especie,
         resultado.data.nomeComum,

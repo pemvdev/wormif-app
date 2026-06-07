@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
-import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
-import { validateUploadImagem } from '../utils/FileValidator';
+import type { UploadImagemDTO } from '../dto/UploadImagemDTO-Back';
+import { validateUploadImagem } from '../utils/FileValidator-Back';
 
 export const uploadMiddleware: MiddlewareHandler<{
   Bindings: Env;
