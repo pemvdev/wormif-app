@@ -11,8 +11,8 @@ import { Card } from '@Front-end/components/ui/card';
 import { Badge } from '@Front-end/components/ui/badge';
 import { Progress } from '@Front-end/components/ui/progress';
 import { Button } from '@Front-end/components/ui/button';
-import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO-Front';
-import { diagnosticoFrontLabels, type DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico-Front';
+import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
+import { diagnosticoFrontLabels, type DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico';
 
 interface ResultadoDiagnosticoProps {
   resultado: DiagnosticoResponseDTO | null;

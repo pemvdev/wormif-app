@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { validateFile, fileToBase64, type ValidationResult } from '../utils/FileValidator-Front';
+import { validateFile, fileToBase64, type ValidationResult } from '../utils/FileValidator';
 
 interface UseFileValidatorReturn {
   file: File | null;

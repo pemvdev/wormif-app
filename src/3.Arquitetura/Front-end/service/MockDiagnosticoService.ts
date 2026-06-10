@@ -1,4 +1,4 @@
-import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO-Front';
+import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
 import type { AnalysisHistoryItem } from '@Front-end/context/AppContext';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

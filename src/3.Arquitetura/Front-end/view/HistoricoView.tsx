@@ -8,7 +8,7 @@ import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { useApp } from '@Front-end/context/AppContext';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { historyItemToResultado } from '@Front-end/service/MockDiagnosticoService';
-import { diagnosticoFrontLabels } from '@/3.Arquitetura/Front-end/model/Diagnostico-Front';
+import { diagnosticoFrontLabels } from '@/3.Arquitetura/Front-end/model/Diagnostico';
 import { Card } from '@Front-end/components/ui/card';
 import { Button } from '@Front-end/components/ui/button';
 import { Input } from '@Front-end/components/ui/input';

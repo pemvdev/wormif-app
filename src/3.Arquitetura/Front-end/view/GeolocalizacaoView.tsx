@@ -9,7 +9,7 @@ import { Card } from '@Front-end/components/ui/card';
 import { Label } from '@Front-end/components/ui/label';
 import { Switch } from '@Front-end/components/ui/switch';
 import { Button } from '@Front-end/components/ui/button';
-import { diagnosticoFrontLabels } from '@/3.Arquitetura/Front-end/model/Diagnostico-Front';
+import { diagnosticoFrontLabels } from '@/3.Arquitetura/Front-end/model/Diagnostico';
 
 export default function GeolocalizacaoView() {
   const { settings, updateSettings, history, resolveMockLocation, showToast } = useApp();

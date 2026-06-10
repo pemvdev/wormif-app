@@ -1,6 +1,6 @@
-import { DiagnosticoService } from '@/3.Arquitetura/Front-end/service/DiagnosticoService-Front';
+import { DiagnosticoService } from '@/3.Arquitetura/Front-end/service/DiagnosticoService';
 import { mockAnalisarImagem } from '@Front-end/service/MockDiagnosticoService';
-import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO-Front';
+import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
 
 const diagnosticoService = new DiagnosticoService();
 

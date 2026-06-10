@@ -9,7 +9,7 @@ import LoginView from '@Front-end/view/LoginView';
 import CadastroView from '@Front-end/view/CadastroView';
 import UploadImagemView from '@Front-end/view/UploadImagemView';
 import IdentificacaoIAView from '@Front-end/view/IdentificacaoIAView';
-import ResultadoAnaliseView from '@Front-end/view/ResultadoAnaliseView';
+import DiagnosticoView from '@Front-end/view/DiagnosticoView';
 import HistoricoView from '@Front-end/view/HistoricoView';
 import PerfilView from '@Front-end/view/PerfilView';
 import ConfiguracoesView from '@Front-end/view/ConfiguracoesView';
@@ -36,7 +36,7 @@ export default function App() {
             >
               <Route path="/upload" element={<UploadImagemView />} />
               <Route path="/identificacao" element={<IdentificacaoIAView />} />
-              <Route path="/resultado" element={<ResultadoAnaliseView />} />
+              <Route path="/resultado" element={<DiagnosticoView />} />
               <Route path="/historico" element={<HistoricoView />} />
               <Route path="/perfil" element={<PerfilView />} />
               <Route path="/configuracoes" element={<ConfiguracoesView />} />

@@ -1,18 +1,13 @@
 import { Hono } from 'hono';
 import { AIConfig } from '../config/AIConfig';
-import type { UploadImagemDTO } from '../dto/UploadImagemDTO-Back';
-import { uploadMiddleware } from '../middleware/UploadMiddleware';
 import { DiagnosticoRepository } from '../repository/DiagnosticoRepository';
 import { AIService } from '../service/AIService';
-import { DiagnosticoService } from '../service/DiagnosticoService-Back';
+import { DiagnosticoService } from '../service/DiagnosticoService';
 import { StorageService } from '../service/StorageService';
 
-const diagnosticoController = new Hono<{
-  Bindings: Env;
-  Variables: { uploadDto: UploadImagemDTO };
-}>();
+const diagnosticoController = new Hono<{ Bindings: Env }>();
 
-diagnosticoController.post('/analisar', uploadMiddleware, async (c) => {
+diagnosticoController.post('/analisar', async (c) => {
   const apiKey = c.env.OPENAI_API_KEY;
 
   if (!apiKey) {
@@ -20,18 +15,20 @@ diagnosticoController.post('/analisar', uploadMiddleware, async (c) => {
   }
 
   try {
-    const body = c.get('uploadDto');
-
-    const diagnosticoRepository = new DiagnosticoRepository(c.env.DB);
     const storageService = new StorageService();
-    const aiService = new AIService(apiKey, new AIConfig());
-    const diagnosticoService = new DiagnosticoService(
-      diagnosticoRepository,
-      aiService,
-      storageService
-    );
+    const upload = await storageService.parsearUpload(c.req.raw);
+    if (!upload.ok) {
+      return c.json({ success: false, error: upload.error }, upload.status);
+    }
 
-    const resultado = await diagnosticoService.processar(body);
+    const aiService = new AIService(apiKey, new AIConfig());
+    const resultado = await aiService.analisarImagem(upload.data.imageBase64, upload.data.mimeType);
+
+    if (resultado.success && resultado.data) {
+      const diagnosticoService = new DiagnosticoService(new DiagnosticoRepository(c.env.DB));
+      await diagnosticoService.registrar(resultado.data);
+    }
+
     return c.json(resultado);
   } catch (error) {
     console.error('Erro no controller:', error);

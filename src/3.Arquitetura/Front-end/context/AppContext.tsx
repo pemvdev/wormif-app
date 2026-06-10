@@ -7,8 +7,8 @@ import {
   useState,
   type ReactNode
 } from 'react';
-import type { DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico-Front';
-import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO-Front';
+import type { DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico';
+import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
 
 export interface User {
   id: string;

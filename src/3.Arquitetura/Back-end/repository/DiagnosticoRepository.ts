@@ -1,4 +1,4 @@
-import { Diagnostico, type DiagnosticoBack, type StatusDiagnostico } from '../model/Diagnostico-Back';
+import { Diagnostico, type DiagnosticoBack, type StatusDiagnostico } from '../model/Diagnostico';
 
 type DiagnosticoRow = {
   id: number;

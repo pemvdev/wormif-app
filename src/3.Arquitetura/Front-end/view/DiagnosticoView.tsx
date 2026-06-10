@@ -13,7 +13,7 @@ import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { ANALYSIS_FLOW_MESSAGES } from '@Front-end/utils/analysisFlowNav';
 import { BookOpen, ClipboardList, Lightbulb } from 'lucide-react';
 
-export default function ResultadoAnaliseView() {
+export default function DiagnosticoView() {
   const navigate = useNavigate();
   const { resultado, location, clearFlow } = useAnalysisFlow();
   const { showToast } = useApp();

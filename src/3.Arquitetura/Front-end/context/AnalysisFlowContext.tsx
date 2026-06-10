@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode
 } from 'react';
-import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO-Front';
+import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
 import type { AnalysisHistoryItem } from '@Front-end/context/AppContext';
 
 export interface PendingImage {

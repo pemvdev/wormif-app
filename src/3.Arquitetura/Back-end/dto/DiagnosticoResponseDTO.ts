@@ -1,4 +1,4 @@
-import type { DiagnosticoBack } from '../model/Diagnostico-Back';
+import type { DiagnosticoBack } from '../model/Diagnostico';
 
 export interface DiagnosticoResponseDTO {
   success: boolean;
