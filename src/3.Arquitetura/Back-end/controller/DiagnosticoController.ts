@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { AIConfig } from '../config/AIConfig';
+import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
 import { DiagnosticoRepository } from '../repository/DiagnosticoRepository';
 import { AIService } from '../service/AIService';
 import { AuthService } from '../service/AuthService';
@@ -86,13 +87,31 @@ diagnosticoController.delete('/:id', async (c) => {
   }
 });
 
-diagnosticoController.post('/analisar', async (c) => {
+diagnosticoController.post('/registrar', async (c) => {
   const sessao = await requireSession(c);
   if (!sessao) {
     return c.json({ success: false, error: 'Não autenticado' }, 401);
   }
 
+  try {
+    const body = await c.req.json<NonNullable<DiagnosticoResponseDTO['data']>>();
+    if (!body?.especie || !body?.diagnosticoBack) {
+      return c.json({ success: false, error: 'Dados de diagnóstico inválidos' }, 400);
+    }
+
+    const diagnosticoService = new DiagnosticoService(new DiagnosticoRepository(c.env.DB));
+    const salvo = await diagnosticoService.registrar(sessao.usuarioId, body);
+    return c.json({ success: true, data: { id: salvo.id } });
+  } catch (error) {
+    console.error('Erro ao registrar diagnóstico:', error);
+    return c.json({ success: false, error: 'Erro ao salvar diagnóstico' }, 500);
+  }
+});
+
+diagnosticoController.post('/analisar', async (c) => {
+  const sessao = await requireSession(c);
   const apiKey = c.env.OPENAI_API_KEY;
+
   if (!apiKey) {
     return c.json({ success: false, error: 'API key não configurada' }, 500);
   }
@@ -107,7 +126,7 @@ diagnosticoController.post('/analisar', async (c) => {
     const aiService = new AIService(apiKey, new AIConfig());
     const resultado = await aiService.analisarImagem(upload.data.imageBase64, upload.data.mimeType);
 
-    if (resultado.success && resultado.data) {
+    if (resultado.success && resultado.data && sessao) {
       const diagnosticoService = new DiagnosticoService(new DiagnosticoRepository(c.env.DB));
       const salvo = await diagnosticoService.registrar(sessao.usuarioId, resultado.data);
       return c.json({

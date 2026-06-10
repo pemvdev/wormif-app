@@ -1,10 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router';
+import { BrowserRouter as Router, Navigate, Routes, Route } from 'react-router';
 import { AppProvider } from '@Front-end/context/AppContext';
 import { AnalysisFlowProvider } from '@Front-end/context/AnalysisFlowContext';
 import { AuthLayout } from '@Front-end/components/layout/AuthLayout';
-import { ProtectedRoute } from '@Front-end/components/layout/ProtectedRoute';
+import { AuthRequiredRoute } from '@Front-end/components/layout/AuthRequiredRoute';
 import { AppShell } from '@Front-end/components/layout/AppShell';
-import { RootRedirect } from '@Front-end/components/layout/RootRedirect';
 import LoginView from '@Front-end/view/LoginView';
 import CadastroView from '@Front-end/view/CadastroView';
 import UploadImagemView from '@Front-end/view/UploadImagemView';
@@ -26,28 +25,29 @@ export default function App() {
             <Route path="/cadastro" element={<CadastroView />} />
           </Route>
 
-          <Route element={<ProtectedRoute />}>
-            <Route
-              element={
-                <AnalysisFlowProvider>
-                  <AppShell />
-                </AnalysisFlowProvider>
-              }
-            >
-              <Route path="/upload" element={<UploadImagemView />} />
-              <Route path="/identificacao" element={<IdentificacaoIAView />} />
-              <Route path="/resultado" element={<DiagnosticoView />} />
+          <Route
+            element={
+              <AnalysisFlowProvider>
+                <AppShell />
+              </AnalysisFlowProvider>
+            }
+          >
+            <Route path="/upload" element={<UploadImagemView />} />
+            <Route path="/identificacao" element={<IdentificacaoIAView />} />
+            <Route path="/resultado" element={<DiagnosticoView />} />
+            <Route path="/analise" element={<UploadImagemView />} />
+
+            <Route element={<AuthRequiredRoute />}>
               <Route path="/historico" element={<HistoricoView />} />
               <Route path="/perfil" element={<PerfilView />} />
               <Route path="/configuracoes" element={<ConfiguracoesView />} />
               <Route path="/geolocalizacao" element={<GeolocalizacaoView />} />
               <Route path="/planos" element={<PlanosView />} />
-              <Route path="/analise" element={<UploadImagemView />} />
             </Route>
           </Route>
 
-          <Route path="/" element={<RootRedirect />} />
-          <Route path="*" element={<RootRedirect />} />
+          <Route path="/" element={<Navigate to="/upload" replace />} />
+          <Route path="*" element={<Navigate to="/upload" replace />} />
         </Routes>
       </Router>
     </AppProvider>

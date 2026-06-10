@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { LogIn, Mail, Lock } from 'lucide-react';
 import { Card } from '@Front-end/components/ui/card';
 import { Button } from '@Front-end/components/ui/button';
@@ -18,6 +18,8 @@ import { useApp } from '@Front-end/context/AppContext';
 export default function LoginView() {
   const { login, requestPasswordReset } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = (location.state as { from?: string } | null)?.from ?? '/upload';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,7 @@ export default function LoginView() {
     const result = await login(email, password);
     setLoading(false);
     if (result.ok) {
-      navigate('/upload');
+      navigate(redirectTo);
     } else {
       setError(result.error ?? 'Não foi possível entrar.');
     }

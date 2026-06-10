@@ -31,8 +31,16 @@ export default function IdentificacaoIAView() {
   const navigate = useNavigate();
   const { pending, resultado, setResultado, setLocation, location, clearFlow, setIsAnalyzing } =
     useAnalysisFlow();
-  const { attachLocationToDiagnostico, refreshHistory, resolveMockLocation, settings, showToast } =
-    useApp();
+  const {
+    user,
+    attachLocationToDiagnostico,
+    refreshHistory,
+    resolveMockLocation,
+    settings,
+    showToast,
+    canAnalyze,
+    recordGuestDiagnosis
+  } = useApp();
   const [phase, setPhase] = useState<AnalysisPhase>('analyzing');
   const [progress, setProgress] = useState(12);
   const [statusText, setStatusText] = useState('Preparando imagem...');
@@ -50,11 +58,21 @@ export default function IdentificacaoIAView() {
       return;
     }
 
+    if (!canAnalyze()) {
+      showToast('info', 'Você usou as 3 análises gratuitas. Faça login para continuar.');
+      navigate('/upload', { replace: true });
+      return;
+    }
+
     if (started.current) return;
     started.current = true;
 
-    const loc = resolveMockLocation();
-    setLocation(loc ?? null);
+    if (user && settings.geolocationEnabled) {
+      const loc = resolveMockLocation();
+      setLocation(loc ?? null);
+    } else {
+      setLocation(null);
+    }
 
     const run = async () => {
       setIsAnalyzing(true);
@@ -79,6 +97,9 @@ export default function IdentificacaoIAView() {
         if (response.success && response.data) {
           setPhase('complete');
           setStatusText('Identificação concluída. Revise o resumo e avance quando quiser.');
+          if (!user) {
+            recordGuestDiagnosis(response);
+          }
           if (source === 'mock') {
             showToast(
               'info',
@@ -105,9 +126,13 @@ export default function IdentificacaoIAView() {
     navigate,
     setResultado,
     setLocation,
+    user,
+    settings.geolocationEnabled,
     resolveMockLocation,
     showToast,
-    setIsAnalyzing
+    setIsAnalyzing,
+    canAnalyze,
+    recordGuestDiagnosis
   ]);
 
   const handleCancel = () => {
@@ -119,11 +144,13 @@ export default function IdentificacaoIAView() {
 
   const handleVerResultado = () => {
     if (!displayResult?.success || !displayResult.data) return;
-    if (!locationAttached.current && displayResult.data.id && location) {
-      attachLocationToDiagnostico(displayResult.data.id, location);
-      locationAttached.current = true;
+    if (user) {
+      if (!locationAttached.current && displayResult.data.id && location) {
+        attachLocationToDiagnostico(displayResult.data.id, location);
+        locationAttached.current = true;
+      }
+      void refreshHistory();
     }
-    void refreshHistory();
     navigate('/resultado');
   };
 
@@ -153,7 +180,7 @@ export default function IdentificacaoIAView() {
           }
         />
 
-        {settings.geolocationEnabled && location && (
+        {user && settings.geolocationEnabled && location && (
           <Badge variant="outline" className="mb-4 gap-1">
             <MapPin className="w-3 h-3" aria-hidden />
             {location.label}

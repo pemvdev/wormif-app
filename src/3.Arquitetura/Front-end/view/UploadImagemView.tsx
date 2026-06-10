@@ -27,11 +27,17 @@ import { SAMPLE_IMAGE_BASE64 } from '@Front-end/service/MockDiagnosticoService';
 export default function UploadImagemView() {
   const navigate = useNavigate();
   const { setPending, clearFlow } = useAnalysisFlow();
-  const { showToast, history } = useApp();
+  const { user, showToast, history, canAnalyze, guestRemainingAnalyses, guestDiagnosisLimit } =
+    useApp();
   const { file, preview, base64, error, isLoading, handleFile, reset } = useFileValidator();
 
   const handleContinue = () => {
     if (!file || !base64 || !preview) return;
+    if (!canAnalyze()) {
+      showToast('info', 'Você usou as 3 análises gratuitas. Faça login para continuar.');
+      navigate('/login');
+      return;
+    }
     setPending({
       preview,
       base64,
@@ -63,11 +69,26 @@ export default function UploadImagemView() {
         description="Envie uma foto nítida do inseto ou estágio de vida. A qualidade da imagem impacta diretamente a precisão da identificação por IA. Formatos aceitos: JPEG, PNG, WebP ou GIF (até 10 MB)."
       />
 
+      {!user && (
+        <Card className="p-4 mb-6 border-primary/30 bg-primary/5">
+          <p className="text-sm text-foreground">
+            <span className="font-semibold">
+              {guestRemainingAnalyses} de {guestDiagnosisLimit} análises gratuitas
+            </span>{' '}
+            restantes sem login. Faça login depois para salvar o histórico.
+          </p>
+        </Card>
+      )}
+
       <PageStatsRow
         items={[
           { icon: Layers, label: 'Etapas', value: '3 passos' },
           { icon: Clock, label: 'Tempo médio', value: '~2 min' },
-          { icon: Bug, label: 'Seu histórico', value: `${history.length} análises` },
+          {
+            icon: Bug,
+            label: user ? 'Seu histórico' : 'Análises grátis',
+            value: user ? `${history.length} análises` : `${guestRemainingAnalyses} restantes`
+          },
           { icon: Camera, label: 'Resolução', value: 'Recom. HD+' }
         ]}
       />

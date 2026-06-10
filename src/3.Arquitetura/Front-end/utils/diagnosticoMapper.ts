@@ -25,6 +25,27 @@ export function mapApiResponseToFront(response: DiagnosticoResponseDTO): Diagnos
   };
 }
 
+export type RegistrarDiagnosticoPayload = {
+  especie: string;
+  nomeComum: string;
+  diagnosticoBack: DiagnosticoFront;
+  nivelConfianca: number;
+  descricao: string;
+  caracteristicas: string[];
+  habitat: string;
+  cicloDeVida: string;
+  proximoEstagio?: string;
+};
+
+export function frontDataToRegistrarPayload(
+  data: NonNullable<DiagnosticoResponseDTO['data']>
+): RegistrarDiagnosticoPayload {
+  const extended = data as ApiDiagnosticoData;
+  const diagnosticoBack = extended.diagnosticoBack ?? extended.diagnosticoFront ?? 'desconhecido';
+  const { diagnosticoFront: _front, diagnosticoBack: _back, id: _id, ...rest } = extended;
+  return { ...rest, diagnosticoBack };
+}
+
 export function historicoToHistoryItem(dto: DiagnosticoHistoricoDTO): AnalysisHistoryItem {
   return {
     id: dto.id,

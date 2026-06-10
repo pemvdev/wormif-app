@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router';
+import { NavLink, useLocation, useNavigate } from 'react-router';
 import {
   Upload,
   Sparkles,
@@ -9,6 +9,8 @@ import {
   Settings,
   Crown,
   LogOut,
+  LogIn,
+  UserPlus,
   X
 } from 'lucide-react';
 import { BrandLogo } from '@Front-end/components/layout/BrandLogo';
@@ -26,6 +28,7 @@ export type NavSection = {
     label: string;
     icon: typeof Upload;
     analysisStep?: AnalysisFlowPath;
+    requiresAuth?: boolean;
   }[];
 };
 
@@ -47,21 +50,22 @@ export const sidebarSections: NavSection[] = [
   {
     title: 'Registros',
     items: [
-      { to: '/historico', label: 'Histórico', icon: History },
-      { to: '/geolocalizacao', label: 'Geolocalização', icon: MapPin }
+      { to: '/historico', label: 'Histórico', icon: History, requiresAuth: true },
+      { to: '/geolocalizacao', label: 'Geolocalização', icon: MapPin, requiresAuth: true }
     ]
   },
   {
     title: 'Conta',
     items: [
-      { to: '/perfil', label: 'Meu perfil', icon: User },
-      { to: '/configuracoes', label: 'Configurações', icon: Settings },
-      { to: '/planos', label: 'Planos', icon: Crown }
+      { to: '/perfil', label: 'Meu perfil', icon: User, requiresAuth: true },
+      { to: '/configuracoes', label: 'Configurações', icon: Settings, requiresAuth: true },
+      { to: '/planos', label: 'Planos', icon: Crown, requiresAuth: true }
     ]
   }
 ];
 
 interface AppSidebarProps {
+  isLoggedIn: boolean;
   userName: string;
   userEmail: string;
   onLogout: () => void;
@@ -75,24 +79,39 @@ function NavItem({
   label,
   icon: Icon,
   analysisStep,
+  requiresAuth,
   onNavigate
 }: {
   to: string;
   label: string;
   icon: typeof Upload;
   analysisStep?: AnalysisFlowPath;
+  requiresAuth?: boolean;
   onNavigate?: () => void;
 }) {
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const { navigateToAnalysisStep } = useAnalysisFlowNav();
   const { isAnalyzing } = useAnalysisFlow();
-  const { showToast } = useApp();
+  const { user, showToast } = useApp();
   const isActive = pathname === to;
+
+  const guardAuth = () => {
+    if (!requiresAuth || user) return true;
+    showToast('info', 'Faça login para acessar esta área.');
+    navigate('/login', { state: { from: to } });
+    onNavigate?.();
+    return false;
+  };
 
   const handleClick = (e: React.MouseEvent) => {
     if (isAnalyzing) {
       e.preventDefault();
       showToast('info', 'Aguarde a identificação por IA terminar.');
+      return;
+    }
+    if (!guardAuth()) {
+      e.preventDefault();
       return;
     }
     if (analysisStep) {
@@ -108,7 +127,8 @@ function NavItem({
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     isActive
       ? 'bg-primary text-primary-foreground shadow-sm'
-      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+    requiresAuth && !user && 'opacity-80'
   );
 
   if (analysisStep) {
@@ -126,6 +146,10 @@ function NavItem({
       showToast('info', 'Aguarde a identificação por IA terminar.');
       return;
     }
+    if (!guardAuth()) {
+      e.preventDefault();
+      return;
+    }
     onNavigate?.();
   };
 
@@ -138,6 +162,7 @@ function NavItem({
 }
 
 export function AppSidebar({
+  isLoggedIn,
   userName,
   userEmail,
   onLogout,
@@ -145,6 +170,8 @@ export function AppSidebar({
   onMobileClose,
   className
 }: AppSidebarProps) {
+  const navigate = useNavigate();
+
   return (
     <aside
       className={cn(
@@ -191,19 +218,53 @@ export function AppSidebar({
       </nav>
 
       <div className="border-t border-border/80 p-4 space-y-3">
-        <div className="px-2 min-w-0">
-          <p className="text-sm font-medium truncate">{userName}</p>
-          <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full min-h-11 justify-start text-destructive hover:text-destructive"
-          onClick={onLogout}
-        >
-          <LogOut className="w-4 h-4 mr-2 shrink-0" aria-hidden />
-          Sair
-        </Button>
+        {isLoggedIn ? (
+          <>
+            <div className="px-2 min-w-0">
+              <p className="text-sm font-medium truncate">{userName}</p>
+              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full min-h-11 justify-start text-destructive hover:text-destructive"
+              onClick={onLogout}
+            >
+              <LogOut className="w-4 h-4 mr-2 shrink-0" aria-hidden />
+              Sair
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="px-2">
+              <p className="text-sm font-medium">Visitante</p>
+              <p className="text-xs text-muted-foreground">Até 3 análises sem login</p>
+            </div>
+            <Button
+              type="button"
+              className="w-full min-h-11 justify-start"
+              onClick={() => {
+                onMobileClose?.();
+                navigate('/login');
+              }}
+            >
+              <LogIn className="w-4 h-4 mr-2 shrink-0" aria-hidden />
+              Entrar
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full min-h-11 justify-start"
+              onClick={() => {
+                onMobileClose?.();
+                navigate('/cadastro');
+              }}
+            >
+              <UserPlus className="w-4 h-4 mr-2 shrink-0" aria-hidden />
+              Criar conta
+            </Button>
+          </>
+        )}
       </div>
     </aside>
   );

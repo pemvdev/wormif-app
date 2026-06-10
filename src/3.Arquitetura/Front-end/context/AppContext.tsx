@@ -11,7 +11,16 @@ import { getAuthToken } from '@Front-end/api/authToken';
 import type { DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico';
 import { AuthService } from '@Front-end/service/AuthService';
 import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
-import { historicoToHistoryItem } from '@Front-end/utils/diagnosticoMapper';
+import {
+  canGuestAnalyze,
+  clearPendingGuestDiagnoses,
+  getGuestRemainingAnalyses,
+  GUEST_DIAGNOSIS_LIMIT,
+  addPendingGuestDiagnosis,
+  requeuePendingGuestDiagnosis
+} from '@Front-end/context/guestDiagnosis';
+import { frontDataToRegistrarPayload, historicoToHistoryItem } from '@Front-end/utils/diagnosticoMapper';
+import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
 
 export interface User {
   id: string;
@@ -78,6 +87,13 @@ interface AppContextValue {
     location: AnalysisHistoryItem['localizacao']
   ) => void;
   removeAnalysis: (id: number) => Promise<void>;
+  canAnalyze: () => boolean;
+  guestRemainingAnalyses: number;
+  guestDiagnosisLimit: number;
+  recordGuestDiagnosis: (
+    result: DiagnosticoResponseDTO,
+    localizacao?: AnalysisHistoryItem['localizacao']
+  ) => void;
   showToast: (type: ToastMessage['type'], text: string) => void;
   dismissToast: () => void;
   resolveMockLocation: () => AnalysisHistoryItem['localizacao'] | undefined;
@@ -147,6 +163,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [activePlanId, setActivePlanId] = useState<PlanId>(() => loadState().activePlanId ?? 'free');
   const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [guestRemainingAnalyses, setGuestRemainingAnalyses] = useState(() =>
+    user ? GUEST_DIAGNOSIS_LIMIT : getGuestRemainingAnalyses()
+  );
 
   useEffect(() => {
     localStorage.setItem(
@@ -168,6 +187,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const dismissToast = useCallback(() => setToast(null), []);
+
+  const syncPendingGuestDiagnoses = useCallback(async () => {
+    const pending = clearPendingGuestDiagnoses();
+    if (pending.length === 0) return 0;
+
+    let synced = 0;
+    for (const item of pending) {
+      if (!item.result.success || !item.result.data) continue;
+      try {
+        const id = await diagnosticoService.registrar(
+          frontDataToRegistrarPayload(item.result.data)
+        );
+        synced += 1;
+        if (item.localizacao) {
+          setGeoByDiagnosticoId((prev) => ({ ...prev, [String(id)]: item.localizacao }));
+        }
+      } catch {
+        requeuePendingGuestDiagnosis(item);
+      }
+    }
+    return synced;
+  }, []);
 
   const refreshHistory = useCallback(async () => {
     setHistoryLoading(true);
@@ -205,9 +246,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       name: response.data.usuario.nome,
       email: response.data.usuario.email
     });
-    showToast('success', 'Login realizado com sucesso.');
+    const synced = await syncPendingGuestDiagnoses();
+    await refreshHistory();
+    setGuestRemainingAnalyses(GUEST_DIAGNOSIS_LIMIT);
+    if (synced > 0) {
+      showToast('success', `${synced} análise(s) salva(s) no histórico.`);
+    } else {
+      showToast('success', 'Login realizado com sucesso.');
+    }
     return { ok: true };
-  }, [showToast]);
+  }, [showToast, syncPendingGuestDiagnoses, refreshHistory]);
 
   const register = useCallback(
     async (data: { name: string; email: string; password: string }) => {
@@ -224,18 +272,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
         name: response.data.usuario.nome,
         email: response.data.usuario.email
       });
-      showToast('success', 'Conta criada. Bem-vindo ao Wormif!');
+      const synced = await syncPendingGuestDiagnoses();
+      await refreshHistory();
+      setGuestRemainingAnalyses(GUEST_DIAGNOSIS_LIMIT);
+      if (synced > 0) {
+        showToast('success', `Conta criada. ${synced} análise(s) salva(s) no histórico.`);
+      } else {
+        showToast('success', 'Conta criada. Bem-vindo ao Wormif!');
+      }
       return { ok: true };
     },
-    [showToast]
+    [showToast, syncPendingGuestDiagnoses, refreshHistory]
   );
 
   const logout = useCallback(() => {
     void authService.logout();
     setUser(null);
     setHistory([]);
+    setGuestRemainingAnalyses(getGuestRemainingAnalyses());
     showToast('info', 'Sessão encerrada.');
   }, [showToast]);
+
+  const canAnalyze = useCallback(() => {
+    if (user) return true;
+    return canGuestAnalyze();
+  }, [user]);
+
+  const recordGuestDiagnosis = useCallback(
+    (result: DiagnosticoResponseDTO, localizacao?: AnalysisHistoryItem['localizacao']) => {
+      if (user) return;
+      addPendingGuestDiagnosis(result, localizacao);
+      setGuestRemainingAnalyses(getGuestRemainingAnalyses());
+    },
+    [user]
+  );
 
   const updateProfile = useCallback((data: Partial<Pick<User, 'name' | 'email'>>) => {
     setUser((prev) => (prev ? { ...prev, ...data } : prev));
@@ -331,6 +401,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshHistory,
       attachLocationToDiagnostico,
       removeAnalysis,
+      canAnalyze,
+      guestRemainingAnalyses,
+      guestDiagnosisLimit: GUEST_DIAGNOSIS_LIMIT,
+      recordGuestDiagnosis,
       showToast,
       dismissToast,
       resolveMockLocation,
@@ -353,6 +427,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshHistory,
       attachLocationToDiagnostico,
       removeAnalysis,
+      canAnalyze,
+      guestRemainingAnalyses,
+      recordGuestDiagnosis,
       showToast,
       dismissToast,
       resolveMockLocation,

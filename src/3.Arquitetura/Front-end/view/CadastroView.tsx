@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { UserPlus, Mail, Lock, User } from 'lucide-react';
 import { Card } from '@Front-end/components/ui/card';
 import { Button } from '@Front-end/components/ui/button';
@@ -10,6 +10,8 @@ import { useApp } from '@Front-end/context/AppContext';
 export default function CadastroView() {
   const { register } = useApp();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = (location.state as { from?: string } | null)?.from ?? '/upload';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,7 +33,7 @@ export default function CadastroView() {
     setLoading(false);
 
     if (result.ok) {
-      navigate('/upload');
+      navigate(redirectTo);
     } else {
       setError(result.error ?? 'Não foi possível cadastrar.');
     }

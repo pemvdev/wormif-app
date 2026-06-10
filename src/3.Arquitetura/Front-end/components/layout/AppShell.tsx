@@ -17,7 +17,7 @@ export function AppShell() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/upload');
   };
 
   return (
@@ -45,6 +45,7 @@ export function AppShell() {
         )}
 
         <AppSidebar
+          isLoggedIn={Boolean(user)}
           userName={user?.name ?? ''}
           userEmail={user?.email ?? ''}
           onLogout={handleLogout}

@@ -1,4 +1,5 @@
 import { ApiClient } from '../api/ApiClient';
+import type { RegistrarDiagnosticoPayload } from '../utils/diagnosticoMapper';
 import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
 import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
 import type { DiagnosticoHistoricoDTO } from '../dto/DiagnosticoHistoricoDTO';
@@ -62,5 +63,16 @@ export class DiagnosticoService {
     if (!response.success) {
       throw new Error(response.error ?? 'Falha ao excluir diagnóstico');
     }
+  }
+
+  async registrar(data: RegistrarDiagnosticoPayload): Promise<number> {
+    const response = await this.apiClient.post<{ success: boolean; data?: { id: number }; error?: string }>(
+      '/diagnostico/registrar',
+      data
+    );
+    if (!response.success || !response.data?.id) {
+      throw new Error(response.error ?? 'Falha ao salvar diagnóstico');
+    }
+    return response.data.id;
   }
 }

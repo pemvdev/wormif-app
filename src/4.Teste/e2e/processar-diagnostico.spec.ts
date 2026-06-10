@@ -13,7 +13,7 @@ test.describe('Processar Diagnóstico (API)', () => {
     const unauthenticated = await request.post(DIAGNOSTICO_ANALISAR_URL, {
       data: buildImagePayload()
     });
-    expect(unauthenticated.status()).toBe(401);
+    expect(unauthenticated.status()).not.toBe(401);
 
     const token = await loginApiUser(request);
     const invalid = await request.post(DIAGNOSTICO_ANALISAR_URL, {

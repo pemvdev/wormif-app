@@ -82,6 +82,14 @@ npm run dev
 
 Fluxo de análise: **Upload → Identificação IA → Resultado** (stepper no topo).
 
+### Visitante (sem login)
+
+- O app abre em `/upload` — não exige login para começar.
+- Até **3 análises gratuitas** sem conta (contador na tela de upload).
+- Resultados são exibidos normalmente; o histórico **não** é salvo no servidor até o login.
+- As análises feitas como visitante ficam em `sessionStorage` e são sincronizadas ao **entrar** ou **cadastrar** (`POST /api/diagnostico/registrar`).
+- **Histórico**, **perfil**, **configurações**, **geolocalização** e **planos** exigem login (menu mostra aviso e redireciona para `/login`).
+
 ## Testes automatizados (Playwright)
 
 | Ficheiro | Plano de testes |
@@ -112,7 +120,15 @@ O `src/4.Teste/playwright.config.ts` sobe o `npm run dev` automaticamente (raiz 
 
 Rotas de autenticação: `/api/auth` (`login`, `register`, `logout`).
 
-Rotas de diagnóstico (exigem `Authorization: Bearer <token>`): `/api/diagnostico` (ver `DiagnosticoController.ts`). Cada diagnóstico é salvo com `user_id` do usuário logado; o histórico lista apenas registros do próprio usuário.
+Rotas de diagnóstico (`DiagnosticoController.ts`):
+
+| Rota | Auth |
+|------|------|
+| `POST /api/diagnostico/analisar` | Opcional — salva no D1 só se autenticado |
+| `POST /api/diagnostico/registrar` | Obrigatória — sincroniza análises pendentes do visitante |
+| `GET /api/diagnostico/historico`, `GET/DELETE /api/diagnostico/:id` | Obrigatória |
+
+Cada diagnóstico persistido usa `user_id` do usuário logado; o histórico lista apenas registros do próprio usuário.
 
 ## Deploy
 

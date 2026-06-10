@@ -7,6 +7,7 @@ import { AnalysisFlowStepper } from '@Front-end/components/layout/AnalysisFlowSt
 import { ResultadoDiagnostico } from '@Front-end/components/ResultadoDiagnostico';
 import { Badge } from '@Front-end/components/ui/badge';
 import { Button } from '@Front-end/components/ui/button';
+import { Card } from '@Front-end/components/ui/card';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { useApp } from '@Front-end/context/AppContext';
 import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
@@ -16,7 +17,7 @@ import { BookOpen, ClipboardList, Lightbulb } from 'lucide-react';
 export default function DiagnosticoView() {
   const navigate = useNavigate();
   const { resultado, location, clearFlow } = useAnalysisFlow();
-  const { showToast } = useApp();
+  const { user, showToast } = useApp();
 
   useEffect(() => {
     if (!resultado) {
@@ -69,7 +70,23 @@ export default function DiagnosticoView() {
         description="Informações sobre a espécie identificada, estágio de vida e nível de confiança da IA."
       />
 
-      {location && (
+      {!user && (
+        <Card className="p-4 mb-4 border-primary/30 bg-primary/5">
+          <p className="text-sm text-foreground">
+            Esta análise ainda não está no histórico.{' '}
+            <button
+              type="button"
+              className="text-primary font-medium hover:underline"
+              onClick={() => navigate('/login')}
+            >
+              Faça login
+            </button>{' '}
+            para salvar suas análises gratuitas.
+          </p>
+        </Card>
+      )}
+
+      {user && location && (
         <Badge variant="outline" className="mb-4 gap-1">
           <MapPin className="w-3 h-3" aria-hidden />
           Registrado em: {location.label}
@@ -90,10 +107,10 @@ export default function DiagnosticoView() {
             type="button"
             variant="outline"
             className="min-h-10"
-            onClick={() => navigate('/historico')}
+            onClick={() => navigate(user ? '/historico' : '/login', user ? undefined : { state: { from: '/historico' } })}
           >
             <History className="w-4 h-4 mr-2" />
-            Ver histórico
+            {user ? 'Ver histórico' : 'Entrar para ver histórico'}
           </Button>
         </div>
       )}
