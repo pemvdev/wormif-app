@@ -7,8 +7,11 @@ import {
   useState,
   type ReactNode
 } from 'react';
+import { getAuthToken } from '@Front-end/api/authToken';
 import type { DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico';
-import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
+import { AuthService } from '@Front-end/service/AuthService';
+import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
+import { historicoToHistoryItem } from '@Front-end/utils/diagnosticoMapper';
 
 export interface User {
   id: string;
@@ -17,12 +20,15 @@ export interface User {
 }
 
 export interface AnalysisHistoryItem {
-  id: string;
+  id: number;
   createdAt: string;
   especie: string;
   nomeComum: string;
   diagnosticoFront: DiagnosticoFront;
   nivelConfianca: number;
+  descricao?: string;
+  caracteristicas?: string[];
+  habitat?: string;
   localizacao?: {
     lat: number;
     lng: number;
@@ -55,6 +61,7 @@ interface AppContextValue {
   user: User | null;
   settings: AppSettings;
   history: AnalysisHistoryItem[];
+  historyLoading: boolean;
   toast: ToastMessage | null;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   register: (data: {
@@ -65,11 +72,12 @@ interface AppContextValue {
   logout: () => void;
   updateProfile: (data: Partial<Pick<User, 'name' | 'email'>>) => void;
   updateSettings: (patch: Partial<AppSettings>) => void;
-  addAnalysisFromResult: (
-    result: DiagnosticoResponseDTO,
-    location?: AnalysisHistoryItem['localizacao']
+  refreshHistory: () => Promise<void>;
+  attachLocationToDiagnostico: (
+    diagnosticoId: number,
+    location: AnalysisHistoryItem['localizacao']
   ) => void;
-  removeAnalysis: (id: string) => void;
+  removeAnalysis: (id: number) => Promise<void>;
   showToast: (type: ToastMessage['type'], text: string) => void;
   dismissToast: () => void;
   resolveMockLocation: () => AnalysisHistoryItem['localizacao'] | undefined;
@@ -80,6 +88,8 @@ interface AppContextValue {
 }
 
 const STORAGE_KEY = 'wormif_app_state_v1';
+const authService = new AuthService();
+const diagnosticoService = new DiagnosticoService();
 
 const defaultSettings: AppSettings = {
   theme: 'system',
@@ -92,31 +102,10 @@ const defaultSettings: AppSettings = {
   }
 };
 
-const seedHistory: AnalysisHistoryItem[] = [
-  {
-    id: 'seed-1',
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-    especie: 'Spodoptera frugiperda',
-    nomeComum: 'Lagarta-do-cartucho',
-    diagnosticoFront: 'larva',
-    nivelConfianca: 0.88,
-    localizacao: { lat: -19.92, lng: -43.94, label: 'Contagem, MG' }
-  },
-  {
-    id: 'seed-2',
-    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-    especie: 'Diabrotica speciosa',
-    nomeComum: 'Vaquinha',
-    diagnosticoFront: 'adulto',
-    nivelConfianca: 0.91,
-    localizacao: { lat: -21.76, lng: -43.35, label: 'Juiz de Fora, MG' }
-  }
-];
-
 interface PersistedState {
   user: User | null;
   settings: AppSettings;
-  history: AnalysisHistoryItem[];
+  geoByDiagnosticoId: Record<string, AnalysisHistoryItem['localizacao']>;
   activePlanId?: PlanId;
 }
 
@@ -124,17 +113,18 @@ function loadState(): PersistedState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      return { user: null, settings: defaultSettings, history: seedHistory, activePlanId: 'free' };
+      return { user: null, settings: defaultSettings, geoByDiagnosticoId: {}, activePlanId: 'free' };
     }
-    const parsed = JSON.parse(raw) as PersistedState;
+    const parsed = JSON.parse(raw) as PersistedState & { history?: unknown };
+    const user = parsed.user && getAuthToken() ? parsed.user : null;
     return {
-      user: parsed.user ?? null,
+      user,
       settings: { ...defaultSettings, ...parsed.settings },
-      history: parsed.history?.length ? parsed.history : seedHistory,
+      geoByDiagnosticoId: parsed.geoByDiagnosticoId ?? {},
       activePlanId: parsed.activePlanId ?? 'free'
     };
   } catch {
-    return { user: null, settings: defaultSettings, history: seedHistory, activePlanId: 'free' };
+    return { user: null, settings: defaultSettings, geoByDiagnosticoId: {}, activePlanId: 'free' };
   }
 }
 
@@ -150,16 +140,20 @@ function applyTheme(theme: ThemePreference) {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => loadState().user);
   const [settings, setSettings] = useState<AppSettings>(() => loadState().settings);
-  const [history, setHistory] = useState<AnalysisHistoryItem[]>(() => loadState().history);
+  const [geoByDiagnosticoId, setGeoByDiagnosticoId] = useState<
+    Record<string, AnalysisHistoryItem['localizacao']>
+  >(() => loadState().geoByDiagnosticoId);
+  const [history, setHistory] = useState<AnalysisHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [activePlanId, setActivePlanId] = useState<PlanId>(() => loadState().activePlanId ?? 'free');
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   useEffect(() => {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ user, settings, history, activePlanId })
+      JSON.stringify({ user, settings, geoByDiagnosticoId, activePlanId })
     );
-  }, [user, settings, history, activePlanId]);
+  }, [user, settings, geoByDiagnosticoId, activePlanId]);
 
   useEffect(() => {
     applyTheme(settings.theme);
@@ -175,31 +169,60 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const dismissToast = useCallback(() => setToast(null), []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    if (!email.includes('@') || password.length < 6) {
-      return { ok: false, error: 'E-mail ou senha inválidos.' };
+  const refreshHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const items = await diagnosticoService.listarHistorico();
+      setHistory(
+        items.map((item) => {
+          const mapped = historicoToHistoryItem(item);
+          const localizacao = geoByDiagnosticoId[String(item.id)];
+          return localizacao ? { ...mapped, localizacao } : mapped;
+        })
+      );
+    } catch {
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
     }
-    const mockUser: User = {
-      id: crypto.randomUUID(),
-      name: email.split('@')[0].replace('.', ' '),
-      email: email.toLowerCase()
-    };
-    setUser(mockUser);
+  }, [geoByDiagnosticoId]);
+
+  useEffect(() => {
+    if (user) {
+      void refreshHistory();
+    } else {
+      setHistory([]);
+    }
+  }, [user, refreshHistory]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const response = await authService.login(email, password);
+    if (!response.success || !response.data) {
+      return { ok: false, error: response.error ?? 'E-mail ou senha inválidos.' };
+    }
+    setUser({
+      id: response.data.usuario.id,
+      name: response.data.usuario.nome,
+      email: response.data.usuario.email
+    });
     showToast('success', 'Login realizado com sucesso.');
     return { ok: true };
   }, [showToast]);
 
   const register = useCallback(
     async (data: { name: string; email: string; password: string }) => {
-      if (!data.name.trim()) return { ok: false, error: 'Informe seu nome.' };
-      if (!data.email.includes('@')) return { ok: false, error: 'E-mail inválido.' };
-      if (data.password.length < 6) {
-        return { ok: false, error: 'A senha deve ter pelo menos 6 caracteres.' };
+      const response = await authService.register({
+        nome: data.name,
+        email: data.email,
+        senha: data.password
+      });
+      if (!response.success || !response.data) {
+        return { ok: false, error: response.error ?? 'Não foi possível cadastrar.' };
       }
       setUser({
-        id: crypto.randomUUID(),
-        name: data.name.trim(),
-        email: data.email.toLowerCase()
+        id: response.data.usuario.id,
+        name: response.data.usuario.nome,
+        email: response.data.usuario.email
       });
       showToast('success', 'Conta criada. Bem-vindo ao Wormif!');
       return { ok: true };
@@ -208,7 +231,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    void authService.logout();
     setUser(null);
+    setHistory([]);
     showToast('info', 'Sessão encerrada.');
   }, [showToast]);
 
@@ -226,26 +251,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     showToast('success', 'Preferências salvas.');
   }, [showToast]);
 
-  const addAnalysisFromResult = useCallback(
-    (result: DiagnosticoResponseDTO, location?: AnalysisHistoryItem['localizacao']) => {
-      if (!result.success || !result.data) return;
-      const item: AnalysisHistoryItem = {
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        especie: result.data.especie,
-        nomeComum: result.data.nomeComum,
-        diagnosticoFront: result.data.diagnosticoFront,
-        nivelConfianca: result.data.nivelConfianca,
-        localizacao: location
-      };
-      setHistory((prev) => [item, ...prev]);
+  const attachLocationToDiagnostico = useCallback(
+    (diagnosticoId: number, location: AnalysisHistoryItem['localizacao']) => {
+      if (!location) return;
+      setGeoByDiagnosticoId((prev) => ({ ...prev, [String(diagnosticoId)]: location }));
+      setHistory((prev) =>
+        prev.map((item) => (item.id === diagnosticoId ? { ...item, localizacao: location } : item))
+      );
     },
     []
   );
 
   const removeAnalysis = useCallback(
-    (id: string) => {
+    async (id: number) => {
+      await diagnosticoService.excluir(id);
       setHistory((prev) => prev.filter((item) => item.id !== id));
+      setGeoByDiagnosticoId((prev) => {
+        const next = { ...prev };
+        delete next[String(id)];
+        return next;
+      });
       showToast('success', 'Análise excluída');
     },
     [showToast]
@@ -295,6 +320,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       user,
       settings,
       history,
+      historyLoading,
       toast,
       activePlanId,
       login,
@@ -302,7 +328,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       logout,
       updateProfile,
       updateSettings,
-      addAnalysisFromResult,
+      refreshHistory,
+      attachLocationToDiagnostico,
       removeAnalysis,
       showToast,
       dismissToast,
@@ -315,6 +342,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       user,
       settings,
       history,
+      historyLoading,
       toast,
       activePlanId,
       login,
@@ -322,7 +350,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       logout,
       updateProfile,
       updateSettings,
-      addAnalysisFromResult,
+      refreshHistory,
+      attachLocationToDiagnostico,
       removeAnalysis,
       showToast,
       dismissToast,

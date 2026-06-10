@@ -3,6 +3,7 @@ import type { DiagnosticoFront } from '../model/Diagnostico';
 export interface DiagnosticoResponseDTO {
   success: boolean;
   data?: {
+    id?: number;
     especie: string;
     nomeComum: string;
     diagnosticoFront: DiagnosticoFront;

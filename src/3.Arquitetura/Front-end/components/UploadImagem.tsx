@@ -108,6 +108,7 @@ export function UploadImagem({
             <Button
               variant="destructive"
               size="icon"
+              aria-label="Remover imagem"
               className="absolute top-3 right-3 rounded-full shadow-lg"
               onClick={(e) => {
                 e.stopPropagation();

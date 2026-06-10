@@ -12,6 +12,7 @@ type DiagnosticoRow = {
   description: string;
   characteristics_json: string;
   habitat: string;
+  user_id: string | null;
 };
 
 function parseCharacteristics(value: string): string[] {
@@ -47,8 +48,9 @@ export class DiagnosticoRepository {
           description,
           characteristics_json,
           habitat,
-          source
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          source,
+          user_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
       )
       .bind(
@@ -62,7 +64,8 @@ export class DiagnosticoRepository {
         diagnostico.descricao,
         JSON.stringify(diagnostico.caracteristicas),
         diagnostico.habitat,
-        'application'
+        'application',
+        diagnostico.userId
       )
       .run();
 
@@ -74,7 +77,7 @@ export class DiagnosticoRepository {
     return diagnostico;
   }
 
-  async listar(): Promise<Diagnostico[]> {
+  async listarPorUsuario(userId: string): Promise<Diagnostico[]> {
     const result = await this.database
       .prepare(
         `
@@ -89,28 +92,69 @@ export class DiagnosticoRepository {
           common_name,
           description,
           characteristics_json,
-          habitat
+          habitat,
+          user_id
         FROM diagnosticos
+        WHERE user_id = ?
         ORDER BY diagnostic_date DESC
         `
       )
+      .bind(userId)
       .all<DiagnosticoRow>();
 
-    return result.results.map(
-      (row) =>
-        new Diagnostico(
-          row.id,
-          row.diagnostic_date,
-          row.status,
-          row.confidence_level,
-          row.life_stage,
-          row.validated_by_specialist === 1,
-          row.species,
-          row.common_name,
-          row.description,
-          parseCharacteristics(row.characteristics_json),
-          row.habitat
-        )
+    return result.results.map((row) => this.mapRow(row));
+  }
+
+  async buscarPorId(id: number, userId: string): Promise<Diagnostico | null> {
+    const row = await this.database
+      .prepare(
+        `
+        SELECT
+          id,
+          diagnostic_date,
+          status,
+          confidence_level,
+          life_stage,
+          validated_by_specialist,
+          species,
+          common_name,
+          description,
+          characteristics_json,
+          habitat,
+          user_id
+        FROM diagnosticos
+        WHERE id = ? AND user_id = ?
+        `
+      )
+      .bind(id, userId)
+      .first<DiagnosticoRow>();
+
+    return row ? this.mapRow(row) : null;
+  }
+
+  async excluir(id: number, userId: string): Promise<boolean> {
+    const result = await this.database
+      .prepare('DELETE FROM diagnosticos WHERE id = ? AND user_id = ?')
+      .bind(id, userId)
+      .run();
+
+    return result.success && (result.meta.changes ?? 0) > 0;
+  }
+
+  private mapRow(row: DiagnosticoRow): Diagnostico {
+    return new Diagnostico(
+      row.id,
+      row.diagnostic_date,
+      row.status,
+      row.confidence_level,
+      row.life_stage,
+      row.validated_by_specialist === 1,
+      row.species,
+      row.common_name,
+      row.description,
+      parseCharacteristics(row.characteristics_json),
+      row.habitat,
+      row.user_id
     );
   }
 }

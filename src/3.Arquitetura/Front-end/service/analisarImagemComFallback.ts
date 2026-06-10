@@ -1,6 +1,7 @@
 import { DiagnosticoService } from '@/3.Arquitetura/Front-end/service/DiagnosticoService';
 import { mockAnalisarImagem } from '@Front-end/service/MockDiagnosticoService';
 import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
+import { mapApiResponseToFront } from '@Front-end/utils/diagnosticoMapper';
 
 const diagnosticoService = new DiagnosticoService();
 
@@ -17,7 +18,9 @@ export async function analisarImagemComFallback(
   fileName: string
 ): Promise<AnaliseComFallbackResult> {
   try {
-    const response = await diagnosticoService.analisar(imageBase64, mimeType, fileName);
+    const response = mapApiResponseToFront(
+      await diagnosticoService.analisar(imageBase64, mimeType, fileName)
+    );
     if (response.success && response.data) {
       return { response, source: 'api' };
     }

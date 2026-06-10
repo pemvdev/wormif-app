@@ -29,7 +29,7 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: 'npm run dev',
+    command: 'node ./scripts/db-setup-local.mjs --seed && npm run dev',
     cwd: projectRoot,
     url: baseURL,
     reuseExistingServer: !process.env.CI,

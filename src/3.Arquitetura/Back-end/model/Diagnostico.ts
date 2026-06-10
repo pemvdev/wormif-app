@@ -33,7 +33,8 @@ export class Diagnostico {
     public nomeComum: string,
     public descricao: string,
     public caracteristicas: string[],
-    public habitat: string
+    public habitat: string,
+    public userId: string | null = null
   ) {}
 
   processar(): void {

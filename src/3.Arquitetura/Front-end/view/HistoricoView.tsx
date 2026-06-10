@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { MapPin, Trash2, Bug, Search, Eye, BarChart3, Calendar, Filter } from 'lucide-react';
+import { MapPin, Trash2, Bug, Search, Eye, BarChart3, Calendar, Filter, Loader2 } from 'lucide-react';
 import { PageHeader } from '@Front-end/components/layout/PageHeader';
 import { PageContainer } from '@Front-end/components/layout/PageContainer';
 import { PageStatsRow } from '@Front-end/components/layout/PageStatsRow';
 import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { useApp } from '@Front-end/context/AppContext';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
-import { historyItemToResultado } from '@Front-end/service/MockDiagnosticoService';
+import { historicoToResultado } from '@Front-end/utils/diagnosticoMapper';
 import { diagnosticoFrontLabels } from '@/3.Arquitetura/Front-end/model/Diagnostico';
 import { Card } from '@Front-end/components/ui/card';
 import { Button } from '@Front-end/components/ui/button';
@@ -27,10 +27,15 @@ import {
 
 export default function HistoricoView() {
   const navigate = useNavigate();
-  const { history, removeAnalysis } = useApp();
+  const { history, historyLoading, removeAnalysis, refreshHistory, showToast } = useApp();
   const { setResultado, setLocation } = useAnalysisFlow();
   const [query, setQuery] = useState('');
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    void refreshHistory();
+  }, [refreshHistory]);
 
   const withGeo = history.filter((h) => h.localizacao).length;
   const avgConfidence =
@@ -49,17 +54,37 @@ export default function HistoricoView() {
     );
   });
 
-  const handleDelete = () => {
-    if (deleteId) {
-      removeAnalysis(deleteId);
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await removeAnalysis(deleteId);
       setDeleteId(null);
+    } catch {
+      showToast('error', 'Não foi possível excluir a análise.');
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const handleViewDetails = (id: string) => {
+  const handleViewDetails = (id: number) => {
     const item = history.find((h) => h.id === id);
     if (!item) return;
-    setResultado(historyItemToResultado(item));
+    setResultado(
+      historicoToResultado({
+        id: item.id,
+        data: item.createdAt,
+        status: 'concluido',
+        nivelConfianca: item.nivelConfianca,
+        diagnosticoBack: item.diagnosticoFront,
+        especie: item.especie,
+        nomeComum: item.nomeComum,
+        descricao: item.descricao ?? '',
+        caracteristicas: item.caracteristicas ?? [],
+        habitat: item.habitat ?? '',
+        validadoPorEspecialista: false
+      })
+    );
     setLocation(item.localizacao ?? null);
     navigate('/resultado');
   };
@@ -92,7 +117,12 @@ export default function HistoricoView() {
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {historyLoading ? (
+        <Card className="p-10 text-center border-dashed">
+          <Loader2 className="w-10 h-10 mx-auto text-muted-foreground animate-spin mb-4" aria-hidden />
+          <p className="text-muted-foreground">Carregando histórico...</p>
+        </Card>
+      ) : filtered.length === 0 ? (
         <Card className="p-10 text-center border-dashed">
           <Bug className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" aria-hidden />
           <p className="font-medium text-foreground">Nenhuma análise encontrada</p>
@@ -166,12 +196,13 @@ export default function HistoricoView() {
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
                           <AlertDialogAction
-                            onClick={handleDelete}
+                            onClick={() => void handleDelete()}
+                            disabled={deleting}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            Excluir
+                            {deleting ? 'Excluindo...' : 'Excluir'}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

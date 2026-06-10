@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS diagnosticos (
   characteristics_json TEXT NOT NULL CHECK (json_valid(characteristics_json)),
   habitat TEXT NOT NULL,
   source TEXT NOT NULL DEFAULT 'application',
+  user_id TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
@@ -39,3 +40,6 @@ CREATE INDEX IF NOT EXISTS idx_diagnosticos_status
 
 CREATE INDEX IF NOT EXISTS idx_diagnosticos_source
   ON diagnosticos (source);
+
+CREATE INDEX IF NOT EXISTS idx_diagnosticos_user_id
+  ON diagnosticos (user_id);

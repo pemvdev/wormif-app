@@ -1,13 +1,23 @@
 import { test, expect } from '@playwright/test';
 import {
+  authHeaders,
   buildImagePayload,
   DIAGNOSTICO_ANALISAR_URL,
-  isApiKeyMissingResponse
+  DIAGNOSTICO_HISTORICO_URL,
+  isApiKeyMissingResponse,
+  loginApiUser
 } from './helpers/api';
 
 test.describe('Processar Diagnóstico (API)', () => {
   test('1 — receber imagem via API', async ({ request }) => {
+    const unauthenticated = await request.post(DIAGNOSTICO_ANALISAR_URL, {
+      data: buildImagePayload()
+    });
+    expect(unauthenticated.status()).toBe(401);
+
+    const token = await loginApiUser(request);
     const invalid = await request.post(DIAGNOSTICO_ANALISAR_URL, {
+      headers: authHeaders(token),
       data: { imageBase64: '', mimeType: 'image/png', fileName: 'vazio.png' }
     });
     expect(invalid.status()).toBe(400);
@@ -15,6 +25,7 @@ test.describe('Processar Diagnóstico (API)', () => {
     expect(invalidBody.success).toBe(false);
 
     const valid = await request.post(DIAGNOSTICO_ANALISAR_URL, {
+      headers: authHeaders(token),
       data: buildImagePayload()
     });
     expect(valid.status()).not.toBe(400);
@@ -25,12 +36,14 @@ test.describe('Processar Diagnóstico (API)', () => {
   });
 
   test('2 — processar imagem (modelo de IA)', async ({ request }) => {
+    const token = await loginApiUser(request);
     const response = await request.post(DIAGNOSTICO_ANALISAR_URL, {
+      headers: authHeaders(token),
       data: buildImagePayload()
     });
 
     if (await isApiKeyMissingResponse(response)) {
-      test.skip(true, 'GEMINI_API_KEY não configurada em .dev.vars');
+      test.skip(true, 'OPENAI_API_KEY não configurada em .dev.vars');
     }
 
     expect(response.status()).toBe(200);
@@ -39,16 +52,18 @@ test.describe('Processar Diagnóstico (API)', () => {
     expect(body.success).toBe(true);
     expect(body.data?.especie).toBeTruthy();
     expect(body.data?.nomeComum).toBeTruthy();
-    expect(body.data?.estagioVida).toBeTruthy();
+    expect(body.data?.diagnosticoBack).toBeTruthy();
   });
 
   test('3 — retornar resposta do modelo', async ({ request }) => {
+    const token = await loginApiUser(request);
     const response = await request.post(DIAGNOSTICO_ANALISAR_URL, {
+      headers: authHeaders(token),
       data: buildImagePayload()
     });
 
     if (await isApiKeyMissingResponse(response)) {
-      test.skip(true, 'GEMINI_API_KEY não configurada em .dev.vars');
+      test.skip(true, 'OPENAI_API_KEY não configurada em .dev.vars');
     }
 
     expect(response.status()).toBe(200);
@@ -59,12 +74,36 @@ test.describe('Processar Diagnóstico (API)', () => {
     expect(body.data).toMatchObject({
       especie: expect.any(String),
       nomeComum: expect.any(String),
-      estagioVida: expect.any(String),
+      diagnosticoBack: expect.any(String),
       nivelConfianca: expect.any(Number),
       descricao: expect.any(String),
       habitat: expect.any(String),
       cicloDeVida: expect.any(String)
     });
     expect(Array.isArray(body.data?.caracteristicas)).toBe(true);
+  });
+
+  test('4 — consultar histórico de diagnósticos do usuário', async ({ request }) => {
+    const token = await loginApiUser(request);
+    const response = await request.get(DIAGNOSTICO_HISTORICO_URL, {
+      headers: authHeaders(token)
+    });
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    expect(Array.isArray(body.data)).toBe(true);
+    expect(body.data.length).toBeGreaterThan(0);
+  });
+
+  test('5 — excluir diagnóstico inexistente', async ({ request }) => {
+    const token = await loginApiUser(request);
+    const response = await request.delete('/api/diagnostico/999999', {
+      headers: authHeaders(token)
+    });
+    expect(response.status()).toBe(404);
+
+    const body = await response.json();
+    expect(body.success).toBe(false);
   });
 });

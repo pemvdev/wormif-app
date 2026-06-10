@@ -24,6 +24,23 @@ OPENAI_API_KEY=...
 
 Pode partir de `.dev.vars.example`. A chave deve corresponder ao fornecedor configurado no código.
 
+### Primeira execução (banco local)
+
+O histórico e os diagnósticos ficam no **D1 local** (pasta `.wrangler/`, não versionada). Antes do primeiro `dev`, rode:
+
+```bash
+npm run db:setup:local
+```
+
+Isso aplica as migrations (`diagnosticos`, `usuarios`, `sessoes`, `user_id`) e carrega o usuário de teste:
+
+| Campo | Valor |
+|-------|-------|
+| E-mail | `teste@wormif.app` |
+| Senha | `senha123` |
+
+O seed também insere diagnósticos de exemplo **vinculados a esse usuário**.
+
 ### Desenvolvimento
 
 ```bash
@@ -37,8 +54,10 @@ npm run dev
 | `npm run dev` | Dev server |
 | `npm run build` | Typecheck + build |
 | `npm run check` | Typecheck, build, `wrangler deploy --dry-run` |
-| `npm run db:migrate:local` | Cria/atualiza localmente a estrutura D1 do diagnóstico |
-| `npm run db:seed:diagnostico:test` | Executa a massa SQL local do caso de uso de diagnóstico no D1 |
+| `npm run db:migrate:local` | Migrations D1: `diagnosticos`, `usuarios`, `sessoes`, `user_id` |
+| `npm run db:seed:usuario:test` | Usuário de teste (`teste@wormif.app` / `senha123`) |
+| `npm run db:seed:diagnostico:test` | Diagnósticos de exemplo do usuário de teste |
+| `npm run db:setup:local` | Migration + seeds (recomendado na primeira execução) |
 | `npm run lint` | ESLint |
 | `npm run knip` | Knip |
 | `npm run cf-typegen` | Tipos Wrangler |
@@ -68,7 +87,8 @@ Fluxo de análise: **Upload → Identificação IA → Resultado** (stepper no t
 | Ficheiro | Plano de testes |
 |----------|-----------------|
 | `src/4.Teste/e2e/manter-diagnostico.spec.ts` | **Manter Diagnóstico** (UI, 7 cenários) |
-| `src/4.Teste/e2e/processar-diagnostico.spec.ts` | **Processar Diagnóstico** (API, 3 cenários) |
+| `src/4.Teste/e2e/consultar-historico.spec.ts` | **Consultar Histórico de Diagnóstico** (UI, 3 cenários) |
+| `src/4.Teste/e2e/processar-diagnostico.spec.ts` | **Processar Diagnóstico** (API, 5 cenários) |
 
 Configuração Playwright: `src/4.Teste/playwright.config.ts`. Fixtures em `src/4.Teste/e2e/fixtures/`.
 
@@ -81,7 +101,8 @@ npm run test:e2e
 O `src/4.Teste/playwright.config.ts` sobe o `npm run dev` automaticamente (raiz do projeto).
 
 - **Manter Diagnóstico:** cenário 5 percorre upload → identificação (mock API) → resultado; cenário 7 exclui no histórico.
-- **Processar Diagnóstico:** API em `/api/diagnostico/analisar`.
+- **Consultar Histórico:** lista, busca e reabre detalhes via `/historico`.
+- **Processar Diagnóstico:** API em `/api/diagnostico/analisar`, `/api/diagnostico/historico` e `DELETE /api/diagnostico/:id`.
 
 ## Estrutura
 
@@ -89,7 +110,9 @@ O `src/4.Teste/playwright.config.ts` sobe o `npm run dev` automaticamente (raiz 
 - `src/3.Arquitetura/Back-end` — API Hono, serviços, DTOs
 - `wrangler.json` — Worker, assets, D1, R2
 
-Rotas de diagnóstico: `/api/diagnostico` (ver `DiagnosticoController.ts`).
+Rotas de autenticação: `/api/auth` (`login`, `register`, `logout`).
+
+Rotas de diagnóstico (exigem `Authorization: Bearer <token>`): `/api/diagnostico` (ver `DiagnosticoController.ts`). Cada diagnóstico é salvo com `user_id` do usuário logado; o histórico lista apenas registros do próprio usuário.
 
 ## Deploy
 

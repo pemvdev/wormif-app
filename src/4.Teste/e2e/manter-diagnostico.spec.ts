@@ -3,6 +3,7 @@ import {
   FIXTURES,
   loginAsTestUser,
   mockDiagnosticoApi,
+  mockHistoricoApi,
   removeImageButton,
   uploadImage
 } from './helpers/diagnostico';
@@ -47,7 +48,11 @@ test.describe('Manter Diagnóstico', () => {
     await uploadImage(page, FIXTURES.png);
 
     await page.getByRole('button', { name: 'Continuar para identificação' }).click();
-    await expect(page.getByText('Espécie Identificada')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('heading', { name: 'Identificação concluída' })).toBeVisible({
+      timeout: 30_000
+    });
+    await page.getByRole('button', { name: 'Ver resultado completo' }).click();
+    await expect(page.getByText('Espécie Identificada', { exact: true })).toBeVisible();
     await expect(page.getByText('Tenebrio molitor')).toBeVisible();
     await expect(page.getByText('Bicho-da-farinha')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Descrição' })).toBeVisible();
@@ -60,15 +65,20 @@ test.describe('Manter Diagnóstico', () => {
     await mockDiagnosticoApi(page);
     await uploadImage(page, FIXTURES.png);
     await page.getByRole('button', { name: 'Continuar para identificação' }).click();
-    await expect(page.getByText('Espécie Identificada')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('heading', { name: 'Identificação concluída' })).toBeVisible({
+      timeout: 30_000
+    });
+    await page.getByRole('button', { name: 'Ver resultado completo' }).click();
+    await expect(page.getByText('Espécie Identificada', { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Nova Análise' }).click();
 
     await expect(page.getByText('Arraste uma imagem ou clique para selecionar')).toBeVisible();
-    await expect(page.getByText('Espécie Identificada')).not.toBeVisible();
+    await expect(page.getByText('Espécie Identificada', { exact: true })).not.toBeVisible();
   });
 
   test('7 — excluir diagnóstico', async ({ page }) => {
+    await mockHistoricoApi(page);
     await page.goto('/historico');
     await page.getByRole('button', { name: 'Excluir Análise' }).first().click();
     await page.getByRole('button', { name: 'Excluir' }).click();

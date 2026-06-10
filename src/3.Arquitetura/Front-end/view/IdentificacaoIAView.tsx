@@ -31,13 +31,14 @@ export default function IdentificacaoIAView() {
   const navigate = useNavigate();
   const { pending, resultado, setResultado, setLocation, location, clearFlow, setIsAnalyzing } =
     useAnalysisFlow();
-  const { addAnalysisFromResult, resolveMockLocation, settings, showToast } = useApp();
+  const { attachLocationToDiagnostico, refreshHistory, resolveMockLocation, settings, showToast } =
+    useApp();
   const [phase, setPhase] = useState<AnalysisPhase>('analyzing');
   const [progress, setProgress] = useState(12);
   const [statusText, setStatusText] = useState('Preparando imagem...');
   const [localResult, setLocalResult] = useState<DiagnosticoResponseDTO | null>(null);
   const started = useRef(false);
-  const savedToHistory = useRef(false);
+  const locationAttached = useRef(false);
 
   const isAnalyzing = phase === 'analyzing';
   const displayResult = localResult ?? resultado;
@@ -118,10 +119,11 @@ export default function IdentificacaoIAView() {
 
   const handleVerResultado = () => {
     if (!displayResult?.success || !displayResult.data) return;
-    if (!savedToHistory.current) {
-      addAnalysisFromResult(displayResult, location ?? undefined);
-      savedToHistory.current = true;
+    if (!locationAttached.current && displayResult.data.id && location) {
+      attachLocationToDiagnostico(displayResult.data.id, location);
+      locationAttached.current = true;
     }
+    void refreshHistory();
     navigate('/resultado');
   };
 
