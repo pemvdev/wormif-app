@@ -111,6 +111,11 @@ export default function IdentificacaoIAView() {
           setStatusText('Identificação concluída. Revise o resumo e avance quando quiser.');
           if (!user) {
             recordGuestDiagnosis(response);
+          } else if (!response.data.id) {
+            showToast(
+              'info',
+              'A análise não foi salva no histórico. Sua sessão pode ter expirado — faça login novamente.'
+            );
           }
           if (source === 'mock') {
             showToast(

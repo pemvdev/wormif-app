@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode
 } from 'react';
-import { getAuthToken } from '@Front-end/api/authToken';
+import { getAuthToken, setUnauthorizedHandler } from '@Front-end/api/authToken';
 import type { DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico';
 import { AuthService } from '@Front-end/service/AuthService';
 import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
@@ -192,6 +192,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const dismissToast = useCallback(() => setToast(null), []);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null);
+      setHistory([]);
+      setGuestRemainingAnalyses(getGuestRemainingAnalyses());
+      showToast('info', 'Sessão expirada ou inválida. Faça login novamente.');
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [showToast]);
 
   const syncPendingGuestDiagnoses = useCallback(async () => {
     const pending = clearPendingGuestDiagnoses();

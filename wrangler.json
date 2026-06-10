@@ -9,29 +9,20 @@
   },
   "upload_source_maps": true,
   "assets": {
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "019db345-a173-7000-8161-d7633937a443",
-      "database_id": "019db345-a173-7000-8161-d7633937a443"
+      "database_id": "ca06a0d8-c218-4107-b781-2ff509fb5bb7"
     }
   ],
 	  "r2_buckets": [
 	    {
 	      "binding": "R2_BUCKET",
 	      "bucket_name": "019db345-a173-7000-8161-d7633937a443"
-	    }
-	  ],
-	  "services": [
-	    {
-	      "binding": "EMAILS",
-	      "service": "emails-service",
-	      "entrypoint": "EmailService",
-	      "props": {
-	        "appId": "019db345-a173-7000-8161-d7633937a443"
-	      }
 	    }
 	  ]
 	}

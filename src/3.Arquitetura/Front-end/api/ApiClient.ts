@@ -1,4 +1,4 @@
-import { getAuthToken } from './authToken';
+import { getAuthToken, notifyUnauthorized } from './authToken';
 
 const API_BASE_URL = '/api';
 
@@ -20,6 +20,9 @@ function buildHeaders(includeJson = false): HeadersInit {
 
 async function parseResponse<T>(response: Response, options?: RequestOptions): Promise<T> {
   const body = (await response.json()) as T;
+  if (response.status === 401) {
+    notifyUnauthorized();
+  }
   if (!response.ok && !options?.allowErrorBody) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
