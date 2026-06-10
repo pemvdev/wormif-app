@@ -21,6 +21,11 @@ import {
 } from '@Front-end/context/guestDiagnosis';
 import { frontDataToRegistrarPayload, historicoToHistoryItem } from '@Front-end/utils/diagnosticoMapper';
 import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
+import {
+  captureCurrentLocation as captureCurrentLocationUtil,
+  GeolocationError,
+  type GeoLocationPoint
+} from '@Front-end/utils/geolocation';
 
 export interface User {
   id: string;
@@ -96,7 +101,7 @@ interface AppContextValue {
   ) => void;
   showToast: (type: ToastMessage['type'], text: string) => void;
   dismissToast: () => void;
-  resolveMockLocation: () => AnalysisHistoryItem['localizacao'] | undefined;
+  captureCurrentLocation: () => Promise<GeoLocationPoint>;
   activePlanId: PlanId;
   subscribePlan: (planId: PlanId, planName: string) => void;
   changePassword: (password: string, confirm: string) => { ok: boolean; error?: string };
@@ -346,13 +351,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [showToast]
   );
 
-  const resolveMockLocation = useCallback((): AnalysisHistoryItem['localizacao'] | undefined => {
-    if (!settings.geolocationEnabled) return undefined;
-    return {
-      lat: -19.9167,
-      lng: -43.9345,
-      label: 'Belo Horizonte, MG (campo)'
-    };
+  const captureCurrentLocation = useCallback(async (): Promise<GeoLocationPoint> => {
+    if (!settings.geolocationEnabled) {
+      throw new GeolocationError('Ative a geolocalização para registrar posição.');
+    }
+    return captureCurrentLocationUtil();
   }, [settings.geolocationEnabled]);
 
   const subscribePlan = useCallback(
@@ -407,7 +410,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       recordGuestDiagnosis,
       showToast,
       dismissToast,
-      resolveMockLocation,
+      captureCurrentLocation,
       subscribePlan,
       changePassword,
       requestPasswordReset
@@ -432,7 +435,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       recordGuestDiagnosis,
       showToast,
       dismissToast,
-      resolveMockLocation,
+      captureCurrentLocation,
       subscribePlan,
       changePassword,
       requestPasswordReset

@@ -23,6 +23,7 @@ import { useApp } from '@Front-end/context/AppContext';
 import { analisarImagemComFallback } from '@Front-end/service/AnalisarImagemComFallback';
 import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { ANALYSIS_FLOW_MESSAGES } from '@Front-end/utils/analysisFlowNav';
+import { geolocationErrorMessage } from '@Front-end/utils/geolocation';
 import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
 
 type AnalysisPhase = 'analyzing' | 'complete' | 'error';
@@ -35,7 +36,7 @@ export default function IdentificacaoIAView() {
     user,
     attachLocationToDiagnostico,
     refreshHistory,
-    resolveMockLocation,
+    captureCurrentLocation,
     settings,
     showToast,
     canAnalyze,
@@ -50,6 +51,13 @@ export default function IdentificacaoIAView() {
 
   const isAnalyzing = phase === 'analyzing';
   const displayResult = localResult ?? resultado;
+
+  useEffect(() => {
+    if (!user || !location || !displayResult?.success || !displayResult.data?.id) return;
+    if (locationAttached.current) return;
+    attachLocationToDiagnostico(displayResult.data.id, location);
+    locationAttached.current = true;
+  }, [user, location, displayResult, attachLocationToDiagnostico]);
 
   useEffect(() => {
     if (!pending) {
@@ -68,8 +76,12 @@ export default function IdentificacaoIAView() {
     started.current = true;
 
     if (user && settings.geolocationEnabled) {
-      const loc = resolveMockLocation();
-      setLocation(loc ?? null);
+      void captureCurrentLocation()
+        .then((loc) => setLocation(loc))
+        .catch((error) => {
+          setLocation(null);
+          showToast('info', geolocationErrorMessage(error));
+        });
     } else {
       setLocation(null);
     }
@@ -128,7 +140,7 @@ export default function IdentificacaoIAView() {
     setLocation,
     user,
     settings.geolocationEnabled,
-    resolveMockLocation,
+    captureCurrentLocation,
     showToast,
     setIsAnalyzing,
     canAnalyze,

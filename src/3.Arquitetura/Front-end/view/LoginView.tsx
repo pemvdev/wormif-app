@@ -132,7 +132,7 @@ export default function LoginView() {
 
       <ul className="mt-8 pt-6 border-t border-border/80 space-y-2 text-xs text-muted-foreground lg:hidden">
         <li>· Upload e identificação por IA em 3 etapas</li>
-        <li>· Histórico e geolocalização simulados no navegador</li>
+        <li>· Histórico na nuvem e geolocalização pelo GPS do dispositivo</li>
         <li>· Qualquer e-mail válido e senha com 6+ caracteres</li>
       </ul>
     </Card>
