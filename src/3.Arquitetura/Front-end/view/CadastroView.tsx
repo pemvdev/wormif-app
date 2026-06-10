@@ -5,13 +5,18 @@ import { Card } from '@Front-end/components/ui/card';
 import { Button } from '@Front-end/components/ui/button';
 import { Input } from '@Front-end/components/ui/input';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@Front-end/components/ui/field';
+import { AuthNotice } from '@Front-end/components/layout/AuthNotice';
 import { useApp } from '@Front-end/context/AppContext';
+import { readAuthRedirectState } from '@Front-end/utils/authRedirect';
 
 export default function CadastroView() {
   const { register } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? '/upload';
+  const { from: redirectTo = '/upload', message: authMessage } = readAuthRedirectState(
+    location.state
+  );
+  const authLinkState = authMessage ? { from: redirectTo, message: authMessage } : { from: redirectTo };
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,6 +52,8 @@ export default function CadastroView() {
           Cadastre-se com nome, e-mail e senha para usar o Wormif
         </p>
       </div>
+
+      {authMessage && <AuthNotice message={authMessage} />}
 
       <form onSubmit={handleSubmit} noValidate>
         <FieldGroup>
@@ -129,14 +136,14 @@ export default function CadastroView() {
 
       <p className="text-center text-sm text-muted-foreground mt-6">
         Já tem conta?{' '}
-        <Link to="/login" className="text-primary font-medium hover:underline">
+        <Link to="/login" state={authLinkState} className="text-primary font-medium hover:underline">
           Fazer login
         </Link>
       </p>
 
       <p className="mt-6 text-xs text-muted-foreground text-center leading-relaxed lg:hidden">
-        Ao cadastrar, você concorda com o uso educacional do protótipo. Seus dados ficam apenas neste
-        dispositivo até integrarmos o backend.
+        Ao cadastrar, você concorda com o uso educacional do protótipo. Suas análises como visitante
+        serão salvas no histórico após o cadastro.
       </p>
     </Card>
   );

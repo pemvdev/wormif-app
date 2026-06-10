@@ -22,6 +22,7 @@ import { Card } from '@Front-end/components/ui/card';
 import { useFileValidator } from '@Front-end/hooks/useFileValidator';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { useApp } from '@Front-end/context/AppContext';
+import { buildAuthRedirectState } from '@Front-end/utils/authRedirect';
 import { SAMPLE_IMAGE_BASE64 } from '@Front-end/service/MockDiagnosticoService';
 
 export default function UploadImagemView() {
@@ -34,8 +35,12 @@ export default function UploadImagemView() {
   const handleContinue = () => {
     if (!file || !base64 || !preview) return;
     if (!canAnalyze()) {
-      showToast('info', 'Você usou as 3 análises gratuitas. Faça login para continuar.');
-      navigate('/login');
+      navigate('/login', {
+        state: buildAuthRedirectState(
+          '/upload',
+          'Você usou as 3 análises gratuitas. Entre ou crie uma conta para continuar.'
+        )
+      });
       return;
     }
     setPending({

@@ -20,6 +20,7 @@ import { useAnalysisFlowNav } from '@Front-end/hooks/useAnalysisFlowNav';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { useApp } from '@Front-end/context/AppContext';
 import type { AnalysisFlowPath } from '@Front-end/utils/analysisFlowNav';
+import { buildAuthRedirectState } from '@Front-end/utils/authRedirect';
 
 export type NavSection = {
   title: string;
@@ -98,8 +99,7 @@ function NavItem({
 
   const guardAuth = () => {
     if (!requiresAuth || user) return true;
-    showToast('info', 'Faça login para acessar esta área.');
-    navigate('/login', { state: { from: to } });
+    navigate('/login', { state: buildAuthRedirectState(to) });
     onNavigate?.();
     return false;
   };

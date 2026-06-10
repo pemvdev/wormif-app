@@ -13,13 +13,18 @@ import {
   DialogHeader,
   DialogTitle
 } from '@Front-end/components/ui/dialog';
+import { AuthNotice } from '@Front-end/components/layout/AuthNotice';
 import { useApp } from '@Front-end/context/AppContext';
+import { readAuthRedirectState } from '@Front-end/utils/authRedirect';
 
 export default function LoginView() {
   const { login, requestPasswordReset } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? '/upload';
+  const { from: redirectTo = '/upload', message: authMessage } = readAuthRedirectState(
+    location.state
+  );
+  const authLinkState = authMessage ? { from: redirectTo, message: authMessage } : { from: redirectTo };
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +61,8 @@ export default function LoginView() {
             Acesse suas análises e histórico em campo
           </p>
         </div>
+
+        {authMessage && <AuthNotice message={authMessage} />}
 
         <form onSubmit={handleSubmit} noValidate>
           <FieldGroup>
@@ -118,7 +125,7 @@ export default function LoginView() {
 
       <p className="text-center text-sm text-muted-foreground mt-6">
         Ainda não tem conta?{' '}
-        <Link to="/cadastro" className="text-primary font-medium hover:underline">
+        <Link to="/cadastro" state={authLinkState} className="text-primary font-medium hover:underline">
           Criar cadastro
         </Link>
       </p>

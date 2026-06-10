@@ -12,6 +12,7 @@ import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { useApp } from '@Front-end/context/AppContext';
 import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { ANALYSIS_FLOW_MESSAGES } from '@Front-end/utils/analysisFlowNav';
+import { buildAuthRedirectState } from '@Front-end/utils/authRedirect';
 import { BookOpen, ClipboardList, Lightbulb } from 'lucide-react';
 
 export default function DiagnosticoView() {
@@ -77,7 +78,14 @@ export default function DiagnosticoView() {
             <button
               type="button"
               className="text-primary font-medium hover:underline"
-              onClick={() => navigate('/login')}
+              onClick={() =>
+                navigate('/login', {
+                  state: buildAuthRedirectState(
+                    '/historico',
+                    'Faça login para salvar e consultar seu histórico de análises.'
+                  )
+                })
+              }
             >
               Faça login
             </button>{' '}
@@ -107,7 +115,19 @@ export default function DiagnosticoView() {
             type="button"
             variant="outline"
             className="min-h-10"
-            onClick={() => navigate(user ? '/historico' : '/login', user ? undefined : { state: { from: '/historico' } })}
+            onClick={() =>
+              navigate(
+                user ? '/historico' : '/login',
+                user
+                  ? undefined
+                  : {
+                      state: buildAuthRedirectState(
+                        '/historico',
+                        'Faça login para salvar e consultar seu histórico de análises.'
+                      )
+                    }
+              )
+            }
           >
             <History className="w-4 h-4 mr-2" />
             {user ? 'Ver histórico' : 'Entrar para ver histórico'}
