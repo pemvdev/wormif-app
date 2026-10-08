@@ -1,8 +1,26 @@
 import { Hono } from 'hono';
-import type { LoginUsuarioDTO, RegisterUsuarioDTO } from '../dto/AuthDTO';
+import type { LoginUsuarioDTO, RegisterUsuarioDTO, UpdatePerfilDTO } from '../dto/AuthDTO';
 import { AuthService } from '../service/AuthService';
 
 const authController = new Hono<{ Bindings: Env }>();
+
+authController.put('/profile', async (c) => {
+  const authService = new AuthService(c.env.DB);
+  const sessao = await authService.resolverSessao(c.req.header('Authorization'));
+  if (!sessao) return c.json({ success: false, error: 'Faça login para editar seu perfil.' }, 401);
+  let body: UpdatePerfilDTO;
+  try {
+    body = await c.req.json<UpdatePerfilDTO>();
+  } catch {
+    return c.json({ success: false, error: 'Dados inválidos.' }, 400);
+  }
+  try {
+    const resultado = await authService.atualizarPerfil(sessao.usuarioId, body);
+    return c.json(resultado, resultado.success ? 200 : 400);
+  } catch {
+    return c.json({ success: false, error: 'Não foi possível atualizar o perfil.' }, 500);
+  }
+});
 
 authController.post('/register', async (c) => {
   try {

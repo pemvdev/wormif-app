@@ -1,14 +1,13 @@
 import { ApiClient } from '../api/ApiClient';
 import { setAuthToken } from '../api/authToken';
-import type { AuthResponseDTO } from '../dto/AuthDTO';
+import type { AuthResponseDTO, UpdatePerfilDTO, PerfilResponseDTO } from '../dto/AuthDTO';
 
 export class AuthService {
-  async register(data: {
-    nome: string;
-    email: string;
-    senha: string;
-    ocupacao?: string;
-  }): Promise<AuthResponseDTO> {
+  async updateProfile(data: UpdatePerfilDTO): Promise<PerfilResponseDTO> {
+    return ApiClient.put<PerfilResponseDTO>('/auth/profile', data, { allowErrorBody: true });
+  }
+
+  async register(data: UpdatePerfilDTO & { senha: string }): Promise<AuthResponseDTO> {
     const response = await ApiClient.post<AuthResponseDTO>('/auth/register', data, {
       allowErrorBody: true
     });

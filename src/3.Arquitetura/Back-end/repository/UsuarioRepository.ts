@@ -1,4 +1,5 @@
 import { Usuario } from '../model/Usuario';
+import type { IntuitoUsoAplicacao } from '../dto/AuthDTO';
 
 type UsuarioRow = {
   id: string;
@@ -7,6 +8,10 @@ type UsuarioRow = {
   senha_hash: string;
   senha_salt: string;
   ocupacao: string | null;
+  foto_perfil_url: string | null;
+  linkedin: string | null;
+  intuito_uso: IntuitoUsoAplicacao | null;
+  permite_analise_por_terceiros: number | null;
   data_cadastro: string;
 };
 
@@ -17,8 +22,20 @@ export class UsuarioRepository {
     const result = await this.database
       .prepare(
         `
-        INSERT INTO usuarios (id, nome, email, senha_hash, senha_salt, ocupacao, data_cadastro)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO usuarios (
+          id,
+          nome,
+          email,
+          senha_hash,
+          senha_salt,
+          ocupacao,
+          foto_perfil_url,
+          linkedin,
+          intuito_uso,
+          permite_analise_por_terceiros,
+          data_cadastro
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
       )
       .bind(
@@ -27,7 +44,11 @@ export class UsuarioRepository {
         usuario.email.toLowerCase(),
         usuario.senhaHash,
         usuario.senhaSalt,
-        usuario.ocupacao,
+        usuario.profissao,
+        usuario.fotoPerfilUrl,
+        usuario.linkedin,
+        usuario.intuitoUso,
+        usuario.permiteAnalisePorTerceiros ? 1 : 0,
         usuario.dataCadastro
       )
       .run();
@@ -43,7 +64,18 @@ export class UsuarioRepository {
     const row = await this.database
       .prepare(
         `
-        SELECT id, nome, email, senha_hash, senha_salt, ocupacao, data_cadastro
+        SELECT
+          id,
+          nome,
+          email,
+          senha_hash,
+          senha_salt,
+          ocupacao,
+          foto_perfil_url,
+          linkedin,
+          intuito_uso,
+          permite_analise_por_terceiros,
+          data_cadastro
         FROM usuarios
         WHERE email = ?
         `
@@ -54,11 +86,38 @@ export class UsuarioRepository {
     return row ? this.mapRow(row) : null;
   }
 
+  async atualizarPerfil(usuario: Usuario): Promise<boolean> {
+    const result = await this.database.prepare(`
+      UPDATE usuarios SET nome = ?, email = ?, ocupacao = ?, foto_perfil_url = ?,
+        linkedin = ?, intuito_uso = ?, permite_analise_por_terceiros = ?
+      WHERE id = ? AND NOT EXISTS (
+        SELECT 1 FROM usuarios WHERE email = ? AND id <> ?
+      )
+    `).bind(
+      usuario.nome, usuario.email, usuario.profissao, usuario.fotoPerfilUrl,
+      usuario.linkedin, usuario.intuitoUso, usuario.permiteAnalisePorTerceiros ? 1 : 0,
+      usuario.id, usuario.email, usuario.id
+    ).run();
+    if (!result.success) throw new Error('Falha ao atualizar perfil');
+    return result.meta.changes > 0;
+  }
+
   async buscarPorId(id: string): Promise<Usuario | null> {
     const row = await this.database
       .prepare(
         `
-        SELECT id, nome, email, senha_hash, senha_salt, ocupacao, data_cadastro
+        SELECT
+          id,
+          nome,
+          email,
+          senha_hash,
+          senha_salt,
+          ocupacao,
+          foto_perfil_url,
+          linkedin,
+          intuito_uso,
+          permite_analise_por_terceiros,
+          data_cadastro
         FROM usuarios
         WHERE id = ?
         `
@@ -77,6 +136,10 @@ export class UsuarioRepository {
       row.senha_hash,
       row.senha_salt,
       row.ocupacao,
+      row.foto_perfil_url,
+      row.linkedin,
+      row.intuito_uso,
+      row.permite_analise_por_terceiros === 1,
       row.data_cadastro
     );
   }

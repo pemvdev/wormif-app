@@ -20,7 +20,7 @@ import { Badge } from '@Front-end/components/ui/badge';
 import { Button } from '@Front-end/components/ui/button';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { useApp } from '@Front-end/context/AppContext';
-import { analisarImagemComFallback } from '@Front-end/service/AnalisarImagemComFallback';
+import { analisarImagemComFallback } from '@Front-end/service/analisarImagemComFallback';
 import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { ANALYSIS_FLOW_MESSAGES } from '@Front-end/utils/analysisFlowNav';
 import { geolocationErrorMessage } from '@Front-end/utils/geolocation';

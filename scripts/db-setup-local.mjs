@@ -23,6 +23,9 @@ runSql(path.join(root, 'database/migrations/d1/0002_create_usuarios.sql'));
 runSql(path.join(root, 'database/migrations/d1/0003_add_diagnostico_user_id.sql'), {
   ignoreError: true
 });
+runSql(path.join(root, 'database/migrations/d1/0004_add_usuario_profile_fields.sql'), {
+  ignoreError: true
+});
 if (process.argv.includes('--seed')) {
   runSql(path.join(root, 'database/seeds/d1/usuario-test-data.sql'));
   runSql(path.join(root, 'database/seeds/d1/diagnostico-test-data.sql'));

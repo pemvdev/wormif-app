@@ -21,6 +21,7 @@ import {
 } from '@Front-end/context/guestDiagnosis';
 import { frontDataToRegistrarPayload, historicoToHistoryItem } from '@Front-end/utils/diagnosticoMapper';
 import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
+import type { AuthUsuarioDTO, IntuitoUsoAplicacao } from '@Front-end/dto/AuthDTO';
 import {
   captureCurrentLocation as captureCurrentLocationUtil,
   GeolocationError,
@@ -31,7 +32,18 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  profissao: string | null;
+  fotoPerfilUrl: string | null;
+  linkedin: string | null;
+  intuitoUso: IntuitoUsoAplicacao | null;
+  permiteAnalisePorTerceiros: boolean;
 }
+
+export type ProfileInput = Omit<User, 'id' | 'profissao' | 'linkedin' | 'intuitoUso'> & {
+  profissao: string;
+  linkedin: string;
+  intuitoUso: IntuitoUsoAplicacao;
+};
 
 export interface AnalysisHistoryItem {
   id: number;
@@ -82,9 +94,14 @@ interface AppContextValue {
     name: string;
     email: string;
     password: string;
+    profissao: string;
+    fotoPerfilUrl?: string | null;
+    linkedin: string;
+    intuitoUso: IntuitoUsoAplicacao;
+    permiteAnalisePorTerceiros: boolean;
   }) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
-  updateProfile: (data: Partial<Pick<User, 'name' | 'email'>>) => void;
+  updateProfile: (data: ProfileInput) => Promise<{ ok: boolean; error?: string }>;
   updateSettings: (patch: Partial<AppSettings>) => void;
   refreshHistory: () => Promise<void>;
   attachLocationToDiagnostico: (
@@ -156,6 +173,19 @@ function applyTheme(theme: ThemePreference) {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
   root.classList.toggle('dark', isDark);
+}
+
+function mapAuthUsuarioToUser(usuario: AuthUsuarioDTO): User {
+  return {
+    id: usuario.id,
+    name: usuario.nome,
+    email: usuario.email,
+    profissao: usuario.profissao,
+    fotoPerfilUrl: usuario.fotoPerfilUrl,
+    linkedin: usuario.linkedin,
+    intuitoUso: usuario.intuitoUso,
+    permiteAnalisePorTerceiros: usuario.permiteAnalisePorTerceiros
+  };
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -256,11 +286,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!response.success || !response.data) {
       return { ok: false, error: response.error ?? 'E-mail ou senha inválidos.' };
     }
-    setUser({
-      id: response.data.usuario.id,
-      name: response.data.usuario.nome,
-      email: response.data.usuario.email
-    });
+    setUser(mapAuthUsuarioToUser(response.data.usuario));
     const synced = await syncPendingGuestDiagnoses();
     await refreshHistory();
     setGuestRemainingAnalyses(GUEST_DIAGNOSIS_LIMIT);
@@ -273,20 +299,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [showToast, syncPendingGuestDiagnoses, refreshHistory]);
 
   const register = useCallback(
-    async (data: { name: string; email: string; password: string }) => {
+    async (data: {
+      name: string;
+      email: string;
+      password: string;
+      profissao: string;
+      fotoPerfilUrl?: string | null;
+      linkedin: string;
+      intuitoUso: IntuitoUsoAplicacao;
+      permiteAnalisePorTerceiros: boolean;
+    }) => {
       const response = await authService.register({
         nome: data.name,
         email: data.email,
-        senha: data.password
+        senha: data.password,
+        profissao: data.profissao.trim() || null,
+        fotoPerfilUrl: data.fotoPerfilUrl,
+        linkedin: data.linkedin.trim() || null,
+        intuitoUso: data.intuitoUso,
+        permiteAnalisePorTerceiros: data.permiteAnalisePorTerceiros
       });
       if (!response.success || !response.data) {
         return { ok: false, error: response.error ?? 'Não foi possível cadastrar.' };
       }
-      setUser({
-        id: response.data.usuario.id,
-        name: response.data.usuario.nome,
-        email: response.data.usuario.email
-      });
+      setUser(mapAuthUsuarioToUser(response.data.usuario));
       const synced = await syncPendingGuestDiagnoses();
       await refreshHistory();
       setGuestRemainingAnalyses(GUEST_DIAGNOSIS_LIMIT);
@@ -322,9 +358,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [user]
   );
 
-  const updateProfile = useCallback((data: Partial<Pick<User, 'name' | 'email'>>) => {
-    setUser((prev) => (prev ? { ...prev, ...data } : prev));
-    showToast('success', 'Perfil atualizado.');
+  const updateProfile = useCallback(async (data: ProfileInput) => {
+    try {
+      const response = await authService.updateProfile({
+        nome: data.name, email: data.email, profissao: data.profissao.trim() || null,
+        fotoPerfilUrl: data.fotoPerfilUrl, linkedin: data.linkedin.trim() || null,
+        intuitoUso: data.intuitoUso, permiteAnalisePorTerceiros: data.permiteAnalisePorTerceiros
+      });
+      if (!response.success || !response.data) {
+        return { ok: false, error: response.error ?? 'Não foi possível atualizar o perfil.' };
+      }
+      setUser(mapAuthUsuarioToUser(response.data));
+      showToast('success', 'Perfil atualizado.');
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Não foi possível salvar. Tente novamente.' };
+    }
   }, [showToast]);
 
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
