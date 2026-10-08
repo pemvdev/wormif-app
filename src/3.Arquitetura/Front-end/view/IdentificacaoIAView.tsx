@@ -107,10 +107,10 @@ export default function IdentificacaoIAView() {
         setLocalResult(response);
 
         if (response.success && response.data) {
-          setPhase('complete');
-          setStatusText('Identificação concluída. Revise o resumo e avance quando quiser.');
           if (!user) {
-            recordGuestDiagnosis(response);
+            await recordGuestDiagnosis(response, undefined, {
+              imageBase64: pending.base64, mimeType: pending.mimeType, fileName: pending.fileName
+            });
           } else if (!response.data.id) {
             showToast(
               'info',
@@ -123,6 +123,8 @@ export default function IdentificacaoIAView() {
               'Servidor de IA indisponível — exibindo resultado de demonstração local.'
             );
           }
+          setPhase('complete');
+          setStatusText('Identificação concluída. Revise o resumo e avance quando quiser.');
         } else {
           setPhase('error');
           setStatusText(response.error ?? 'Não foi possível identificar o espécime.');

@@ -30,6 +30,13 @@ async function parseResponse<T>(response: Response, options?: RequestOptions): P
 }
 
 export class ApiClient {
+  static async getBlob(endpoint: string): Promise<Blob> {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, { headers: buildHeaders() });
+    if (response.status === 401) notifyUnauthorized();
+    if (!response.ok) throw new Error('Não foi possível carregar a imagem.');
+    return response.blob();
+  }
+
   static async put<T>(endpoint: string, data: unknown, options?: RequestOptions): Promise<T> {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PUT',
@@ -39,11 +46,11 @@ export class ApiClient {
     return parseResponse<T>(response, options);
   }
 
-  static async get<T>(endpoint: string): Promise<T> {
+  static async get<T>(endpoint: string, options?: RequestOptions): Promise<T> {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: buildHeaders()
     });
-    return parseResponse<T>(response);
+    return parseResponse<T>(response, options);
   }
 
   static async post<T>(

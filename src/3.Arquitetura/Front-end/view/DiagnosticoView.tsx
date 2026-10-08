@@ -5,6 +5,7 @@ import { PageHeader } from '@Front-end/components/layout/PageHeader';
 import { PageContainer } from '@Front-end/components/layout/PageContainer';
 import { AnalysisFlowStepper } from '@Front-end/components/layout/AnalysisFlowStepper';
 import { ResultadoDiagnostico } from '@Front-end/components/ResultadoDiagnostico';
+import { PalpitesRecebidos } from '@Front-end/components/PalpitesRecebidos';
 import { Badge } from '@Front-end/components/ui/badge';
 import { Button } from '@Front-end/components/ui/button';
 import { Card } from '@Front-end/components/ui/card';
@@ -140,6 +141,7 @@ export default function DiagnosticoView() {
         isLoading={false}
         onNovaAnalise={handleNovaAnalise}
       />
+      {user && resultado.success && resultado.data?.id && <PalpitesRecebidos id={resultado.data.id} />}
 
       {resultado.success && (
         <PageInfoGrid

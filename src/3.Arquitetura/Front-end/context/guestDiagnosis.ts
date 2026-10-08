@@ -1,4 +1,6 @@
 import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
+import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
+import { saveGuestImage } from './guestImages';
 
 export const GUEST_DIAGNOSIS_LIMIT = 3;
 const GUEST_STORAGE_KEY = 'wormif_guest_pending_v1';
@@ -49,19 +51,26 @@ export function getGuestRemainingAnalyses(): number {
   return Math.max(0, GUEST_DIAGNOSIS_LIMIT - loadGuestState().usedCount);
 }
 
-export function addPendingGuestDiagnosis(
+export async function addPendingGuestDiagnosis(
   result: DiagnosticoResponseDTO,
-  localizacao?: PendingGuestDiagnosis['localizacao']
-): void {
+  localizacao?: PendingGuestDiagnosis['localizacao'],
+  imagem?: UploadImagemDTO
+): Promise<boolean> {
+  const id = crypto.randomUUID();
+  let imageSaved = true;
+  if (imagem) {
+    try { await saveGuestImage(id, imagem); } catch { imageSaved = false; }
+  }
   const state = loadGuestState();
   state.usedCount += 1;
   state.pending.push({
-    id: crypto.randomUUID(),
+    id,
     createdAt: new Date().toISOString(),
     result,
     localizacao
   });
   saveGuestState(state);
+  return imageSaved;
 }
 
 export function clearPendingGuestDiagnoses(): PendingGuestDiagnosis[] {

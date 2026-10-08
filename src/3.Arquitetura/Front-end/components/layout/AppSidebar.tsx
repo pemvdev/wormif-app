@@ -11,6 +11,7 @@ import {
   LogOut,
   LogIn,
   UserPlus,
+  Users,
   X
 } from 'lucide-react';
 import { BrandLogo } from '@Front-end/components/layout/BrandLogo';
@@ -30,6 +31,7 @@ export type NavSection = {
     icon: typeof Upload;
     analysisStep?: AnalysisFlowPath;
     requiresAuth?: boolean;
+    requiresCollaboration?: boolean;
   }[];
 };
 
@@ -45,7 +47,8 @@ export const sidebarSections: NavSection[] = [
         icon: Sparkles,
         analysisStep: '/identificacao'
       },
-      { to: '/resultado', label: 'Resultados', icon: FileText, analysisStep: '/resultado' }
+      { to: '/resultado', label: 'Resultados', icon: FileText, analysisStep: '/resultado' },
+      { to: '/analises-externas', label: 'Análises externas', icon: Users, requiresAuth: true, requiresCollaboration: true }
     ]
   },
   {
@@ -95,7 +98,7 @@ function NavItem({
   const { navigateToAnalysisStep } = useAnalysisFlowNav();
   const { isAnalyzing } = useAnalysisFlow();
   const { user, showToast } = useApp();
-  const isActive = pathname === to;
+  const isActive = pathname === to || (to === '/analises-externas' && pathname.startsWith(`${to}/`));
 
   const guardAuth = () => {
     if (!requiresAuth || user) return true;
@@ -171,6 +174,7 @@ export function AppSidebar({
   className
 }: AppSidebarProps) {
   const navigate = useNavigate();
+  const { user } = useApp();
 
   return (
     <aside
@@ -207,7 +211,7 @@ export function AppSidebar({
               {section.title}
             </p>
             <ul className="space-y-1" role="list">
-              {section.items.map((item) => (
+              {section.items.filter((item) => !item.requiresCollaboration || user?.intuitoUso === 'ANALISAR_OUTRAS_PESSOAS').map((item) => (
                 <li key={item.to}>
                   <NavItem {...item} onNavigate={onMobileClose} />
                 </li>

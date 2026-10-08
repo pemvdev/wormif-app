@@ -34,7 +34,8 @@ export class Diagnostico {
     public descricao: string,
     public caracteristicas: string[],
     public habitat: string,
-    public userId: string | null = null
+    public userId: string | null = null,
+    public imagemKey: string | null = null
   ) {}
 
   processar(): void {

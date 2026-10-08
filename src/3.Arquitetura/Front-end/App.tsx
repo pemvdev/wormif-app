@@ -14,6 +14,7 @@ import PerfilView from '@Front-end/view/PerfilView';
 import ConfiguracoesView from '@Front-end/view/ConfiguracoesView';
 import GeolocalizacaoView from '@Front-end/view/GeolocalizacaoView';
 import PlanosView from '@Front-end/view/PlanosView';
+import AnalisesExternasView from '@Front-end/view/AnalisesExternasView';
 
 export default function App() {
   return (
@@ -38,6 +39,8 @@ export default function App() {
             <Route path="/analise" element={<UploadImagemView />} />
 
             <Route element={<AuthRequiredRoute />}>
+              <Route path="/analises-externas" element={<AnalisesExternasView />} />
+              <Route path="/analises-externas/:id" element={<AnalisesExternasView />} />
               <Route path="/historico" element={<HistoricoView />} />
               <Route path="/perfil" element={<PerfilView />} />
               <Route path="/configuracoes" element={<ConfiguracoesView />} />

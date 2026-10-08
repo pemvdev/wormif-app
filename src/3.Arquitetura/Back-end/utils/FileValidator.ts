@@ -36,7 +36,10 @@ export function validateBase64PayloadSize(imageBase64: string): ValidationResult
 }
 
 export function validateUploadImagem(dto: UploadImagemDTO): ValidationResult {
-  if (!dto.imageBase64 || !dto.mimeType) {
+  if (!dto || typeof dto.imageBase64 !== 'string' || !dto.imageBase64 || typeof dto.mimeType !== 'string') {
+    return { valid: false, error: 'Dados de imagem inválidos' };
+  }
+  if (dto.imageBase64.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(dto.imageBase64)) {
     return { valid: false, error: 'Dados de imagem inválidos' };
   }
   const mime = validateMimeType(dto.mimeType);

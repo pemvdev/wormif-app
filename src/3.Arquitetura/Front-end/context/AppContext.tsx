@@ -22,6 +22,8 @@ import {
 import { frontDataToRegistrarPayload, historicoToHistoryItem } from '@Front-end/utils/diagnosticoMapper';
 import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
 import type { AuthUsuarioDTO, IntuitoUsoAplicacao } from '@Front-end/dto/AuthDTO';
+import type { UploadImagemDTO } from '@Front-end/dto/UploadImagemDTO';
+import { readGuestImage, deleteGuestImage } from './guestImages';
 import {
   captureCurrentLocation as captureCurrentLocationUtil,
   GeolocationError,
@@ -114,8 +116,9 @@ interface AppContextValue {
   guestDiagnosisLimit: number;
   recordGuestDiagnosis: (
     result: DiagnosticoResponseDTO,
-    localizacao?: AnalysisHistoryItem['localizacao']
-  ) => void;
+    localizacao?: AnalysisHistoryItem['localizacao'],
+    imagem?: UploadImagemDTO
+  ) => Promise<void>;
   showToast: (type: ToastMessage['type'], text: string) => void;
   dismissToast: () => void;
   captureCurrentLocation: () => Promise<GeoLocationPoint>;
@@ -242,9 +245,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!item.result.success || !item.result.data) continue;
       try {
         const id = await diagnosticoService.registrar(
-          frontDataToRegistrarPayload(item.result.data)
+          { ...frontDataToRegistrarPayload(item.result.data), imagem: await readGuestImage(item.id).catch(() => undefined) }
         );
         synced += 1;
+        await deleteGuestImage(item.id).catch(() => undefined);
         if (item.localizacao) {
           setGeoByDiagnosticoId((prev) => ({ ...prev, [String(id)]: item.localizacao }));
         }
@@ -350,12 +354,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const recordGuestDiagnosis = useCallback(
-    (result: DiagnosticoResponseDTO, localizacao?: AnalysisHistoryItem['localizacao']) => {
+    async (result: DiagnosticoResponseDTO, localizacao?: AnalysisHistoryItem['localizacao'], imagem?: UploadImagemDTO) => {
       if (user) return;
-      addPendingGuestDiagnosis(result, localizacao);
+      const imageSaved = await addPendingGuestDiagnosis(result, localizacao, imagem);
+      if (!imageSaved) showToast('info', 'A análise foi guardada, mas não foi possível preservar a foto neste navegador.');
       setGuestRemainingAnalyses(getGuestRemainingAnalyses());
     },
-    [user]
+    [user, showToast]
   );
 
   const updateProfile = useCallback(async (data: ProfileInput) => {
