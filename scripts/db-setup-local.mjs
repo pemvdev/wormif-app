@@ -4,14 +4,15 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const databaseId = '019db345-a173-7000-8161-d7633937a443';
+const wranglerCli = path.join(root, 'node_modules/wrangler/bin/wrangler.js');
 
 function runSql(file, { ignoreError = false } = {}) {
   const relativeFile = path.relative(root, file).replaceAll('\\', '/');
-  const args = ['wrangler', 'd1', 'execute', databaseId, '--local', `--file=./${relativeFile}`];
+  const args = [wranglerCli, 'd1', 'execute', databaseId, '--local', `--file=./${relativeFile}`];
   if (process.env.WORMIF_TEST_STATE_PATH) args.push('--persist-to', process.env.WORMIF_TEST_STATE_PATH);
 
   try {
-    execFileSync('npx', args, { cwd: root, stdio: 'inherit' });
+    execFileSync(process.execPath, args, { cwd: root, stdio: 'inherit' });
   } catch (error) {
     if (!ignoreError) {
       throw error;
