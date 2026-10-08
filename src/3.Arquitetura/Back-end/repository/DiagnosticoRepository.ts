@@ -112,7 +112,7 @@ export class DiagnosticoRepository {
     return diagnostico;
   }
 
-  async listarPorUsuario(userId: string): Promise<Diagnostico[]> {
+  async listarPorUsuario(userId: string): Promise<{ diagnostico: Diagnostico; totalRespostas: number }[]> {
     const result = await this.database
       .prepare(
         `
@@ -129,16 +129,19 @@ export class DiagnosticoRepository {
           characteristics_json,
           habitat,
           user_id,
-          imagem_key
+          imagem_key,
+          (SELECT COUNT(*) FROM diagnostico_discussao resposta
+            WHERE resposta.diagnostico_id = diagnosticos.id
+              AND resposta.usuario_id <> diagnosticos.user_id) AS total_respostas
         FROM diagnosticos
         WHERE user_id = ?
-        ORDER BY diagnostic_date DESC
+        ORDER BY diagnostic_date DESC, id DESC
         `
       )
       .bind(userId)
-      .all<DiagnosticoRow>();
+      .all<DiagnosticoRow & { total_respostas: number }>();
 
-    return result.results.map((row) => this.mapRow(row));
+    return result.results.map((row) => ({ diagnostico: this.mapRow(row), totalRespostas: row.total_respostas }));
   }
 
   async buscarPorId(id: number, userId: string): Promise<Diagnostico | null> {

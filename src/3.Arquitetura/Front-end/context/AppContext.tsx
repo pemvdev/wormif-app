@@ -57,6 +57,7 @@ export interface AnalysisHistoryItem {
   descricao?: string;
   caracteristicas?: string[];
   habitat?: string;
+  totalRespostas?: number;
   localizacao?: {
     lat: number;
     lng: number;
@@ -105,7 +106,7 @@ interface AppContextValue {
   logout: () => void;
   updateProfile: (data: ProfileInput) => Promise<{ ok: boolean; error?: string }>;
   updateSettings: (patch: Partial<AppSettings>) => void;
-  refreshHistory: () => Promise<void>;
+  refreshHistory: (options?: { silent?: boolean }) => Promise<void>;
   attachLocationToDiagnostico: (
     diagnosticoId: number,
     location: AnalysisHistoryItem['localizacao']
@@ -259,10 +260,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return synced;
   }, []);
 
-  const refreshHistory = useCallback(async () => {
-    setHistoryLoading(true);
+  const refreshHistory = useCallback(async (options?: { silent?: boolean }) => {
+    const token = getAuthToken();
+    if (!options?.silent) setHistoryLoading(true);
     try {
       const items = await diagnosticoService.listarHistorico();
+      if (token !== getAuthToken()) return;
       setHistory(
         items.map((item) => {
           const mapped = historicoToHistoryItem(item);
@@ -271,9 +274,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         })
       );
     } catch {
-      setHistory([]);
+      if (!options?.silent && token === getAuthToken()) setHistory([]);
     } finally {
-      setHistoryLoading(false);
+      if (!options?.silent) setHistoryLoading(false);
     }
   }, [geoByDiagnosticoId]);
 

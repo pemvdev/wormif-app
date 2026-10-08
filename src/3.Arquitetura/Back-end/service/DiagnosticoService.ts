@@ -46,7 +46,7 @@ export class DiagnosticoService {
 
   async listar(userId: string): Promise<DiagnosticoHistoricoDTO[]> {
     const diagnosticos = await this.diagnosticoRepository.listarPorUsuario(userId);
-    return diagnosticos.map(toHistoricoDTO);
+    return diagnosticos.map(({ diagnostico, totalRespostas }) => ({ ...toHistoricoDTO(diagnostico), totalRespostas }));
   }
 
   async buscarPorId(id: number, userId: string): Promise<DiagnosticoHistoricoDTO | null> {

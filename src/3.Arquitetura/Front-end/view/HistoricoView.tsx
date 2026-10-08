@@ -35,6 +35,19 @@ export default function HistoricoView() {
 
   useEffect(() => {
     void refreshHistory();
+    let refreshing = false;
+    const refreshSilently = async () => {
+      if (refreshing || document.visibilityState !== 'visible') return;
+      refreshing = true;
+      try { await refreshHistory({ silent: true }); }
+      finally { refreshing = false; }
+    };
+    const interval = window.setInterval(() => void refreshSilently(), 30_000);
+    window.addEventListener('focus', refreshSilently);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshSilently);
+    };
   }, [refreshHistory]);
 
   const withGeo = history.filter((h) => h.localizacao).length;
@@ -147,6 +160,14 @@ export default function HistoricoView() {
                       <Badge variant="secondary">
                         {diagnosticoFrontLabels[item.diagnosticoFront]}
                       </Badge>
+                      {(item.totalRespostas ?? 0) > 0 && <button type="button"
+                        data-testid={`respostas-${item.id}`}
+                        title={`${item.totalRespostas} ${item.totalRespostas === 1 ? 'resposta recebida' : 'respostas recebidas'}`}
+                        aria-label={`${item.totalRespostas} ${item.totalRespostas === 1 ? 'resposta recebida' : 'respostas recebidas'}`}
+                        onClick={() => handleViewDetails(item.id)}
+                        className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold tabular-nums focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2">
+                        {(item.totalRespostas ?? 0) > 99 ? '99+' : item.totalRespostas}
+                      </button>}
                     </div>
                     <p className="text-muted-foreground">{item.nomeComum}</p>
                     <p className="text-sm text-muted-foreground mt-2">

@@ -12,4 +12,5 @@ export interface DiagnosticoHistoricoDTO {
   caracteristicas: string[];
   habitat: string;
   validadoPorEspecialista: boolean;
+  totalRespostas?: number;
 }

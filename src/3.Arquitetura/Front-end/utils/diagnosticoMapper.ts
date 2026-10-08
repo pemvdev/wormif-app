@@ -56,7 +56,8 @@ export function historicoToHistoryItem(dto: DiagnosticoHistoricoDTO): AnalysisHi
     nivelConfianca: dto.nivelConfianca,
     descricao: dto.descricao,
     caracteristicas: dto.caracteristicas,
-    habitat: dto.habitat
+    habitat: dto.habitat,
+    totalRespostas: dto.totalRespostas ?? 0
   };
 }
 

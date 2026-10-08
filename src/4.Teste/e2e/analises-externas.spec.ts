@@ -217,7 +217,9 @@ test('menu, busca, detalhes, falha e visualizacao mobile', async ({ page, reques
   await page.goto('/analises-externas');
   await expect(page.getByRole('alert')).toContainText('Esta área está disponível');
   await page.goto('/historico');
-  await page.getByRole('button', { name: 'Ver detalhes', exact: true }).click();
+  await expect(page.getByTestId(`respostas-${id}`)).toHaveText('2');
+  await expect(page.getByRole('button', { name: '2 respostas recebidas', exact: true })).toHaveCount(1);
+  await page.getByRole('button', { name: '2 respostas recebidas', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Palpites recebidos' })).toBeVisible();
   await expect(page.locator('p').filter({ hasText: 'A foto sugere um espécime adulto.' })).toBeVisible();
   await expect(page.getByText('Minha resposta encadeada.', { exact: true })).toBeVisible();
@@ -226,9 +228,22 @@ test('menu, busca, detalhes, falha e visualizacao mobile', async ({ page, reques
   await page.getByRole('button', { name: 'Publicar resposta', exact: true }).click();
   await expect(page.getByText('Resposta do autor à resposta.', { exact: true })).toBeVisible();
   await expect(page.getByText('Profissão não informada', { exact: true })).toBeVisible();
+  await page.goto('/historico');
+  await expect(page.getByTestId(`respostas-${id}`)).toHaveText('2');
+  const discussion: { data: DiscussaoPaginaDTO } = await (await request.get(`/api/diagnostico/${id}/discussao`, { headers: reviewer.headers })).json();
+  expect((await request.post(`/api/diagnostico/${id}/discussao`, { headers: reviewer.headers,
+    data: { parentId: discussion.data.items[0].id, comentario: 'Mais uma resposta recebida.' }
+  })).status()).toBe(201);
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.getByTestId(`respostas-${id}`)).toHaveText('3');
+  await page.screenshot({ path: '/tmp/wormif-contador-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(() => page.getByRole('complementary', { name: 'Menu principal' }).evaluate((element) => element.getBoundingClientRect().right)).toBeLessThanOrEqual(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: '/tmp/wormif-contador-mobile.png', fullPage: true });
 });
 
-test('discussao compartilhada, respostas aninhadas, perfis e paginacao sem perder comentarios', async ({ request }) => {
+test('discussao compartilhada, respostas aninhadas, perfis e paginacao sem perder comentarios', async ({ page, request }) => {
   test.setTimeout(90_000);
   const author = await createUser(request, false, true);
   const reviewer = await createUser(request, true, false);
@@ -237,12 +252,18 @@ test('discussao compartilhada, respostas aninhadas, perfis e paginacao sem perde
   const id = await createAnalysis(request, author.headers, `Discussão ${crypto.randomUUID()}`, false);
   const otherId = await createAnalysis(request, author.headers, `Outra ${crypto.randomUUID()}`, false);
   const url = `/api/diagnostico/${id}/discussao`;
+  async function totalRecebido() {
+    const history: { data: { id: number; totalRespostas: number }[] } = await (await request.get('/api/diagnostico/historico', { headers: author.headers })).json();
+    return history.data.find((item) => item.id === id)?.totalRespostas;
+  }
+  expect(await totalRecebido()).toBe(0);
   const palpiteUrl = `/api/diagnostico/externas/${id}/palpite`;
   expect((await request.put(palpiteUrl, { headers: reviewer.headers, data: {
     especie: 'Hipótese inicial', estagio: 'larva', comentario: 'Palpite principal'
   } })).status()).toBe(200);
   const first: { data: DiscussaoPaginaDTO } = await (await request.get(url, { headers: observer.headers })).json();
   const root = first.data.items[0];
+  expect(await totalRecebido()).toBe(1);
   expect(root.autor).toMatchObject({ nome: reviewer.profile.nome, profissao: 'Pesquisador', linkedin: reviewer.profile.linkedin });
   expect(root.autor).not.toHaveProperty('email');
   expect(root.autor).not.toHaveProperty('senha');
@@ -257,6 +278,7 @@ test('discussao compartilhada, respostas aninhadas, perfis e paginacao sem perde
     expect((await request.post(url, { headers: reviewer.headers, data: { ...reply, ...invalid } })).status()).toBe(400);
   }
   expect((await request.post(url, { headers: author.headers, data: reply })).status()).toBe(201);
+  expect(await totalRecebido()).toBe(1);
   const updated: { data: DiscussaoPaginaDTO } = await (await request.get(url, { headers: observer.headers })).json();
   const answer = updated.data.items[1];
   expect(answer.parentId).toBe(root.id);
@@ -278,6 +300,16 @@ test('discussao compartilhada, respostas aninhadas, perfis e paginacao sem perde
   expect(pageTwo.data.nextCursor).toBeNull();
   expect(new Set([...pageOne.data.items, ...pageTwo.data.items].map((item) => item.id)).size).toBe(102);
   expect(pageTwo.data.items[1].parentId).toBe(answer.id);
+  expect(await totalRecebido()).toBe(101);
+  await page.goto('/login');
+  await page.getByLabel('E-mail').fill(author.profile.email);
+  await page.getByLabel('Senha', { exact: true }).fill(author.profile.senha);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page).toHaveURL(/\/upload$/);
+  await page.goto('/historico');
+  await expect(page.getByTestId(`respostas-${id}`)).toHaveText('99+');
+  await expect(page.getByTestId(`respostas-${otherId}`)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '101 respostas recebidas', exact: true })).toBeVisible();
   expect((await request.put('/api/auth/profile', { headers: author.headers, data: {
     ...author.profile, permiteAnalisePorTerceiros: false
   } })).status()).toBe(200);
