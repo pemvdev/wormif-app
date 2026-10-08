@@ -9,7 +9,7 @@ import { StorageService } from '../service/StorageService';
 import { AnalisesExternasService } from '../service/AnalisesExternasService';
 import { UsuarioRepository } from '../repository/UsuarioRepository';
 import { PalpiteRepository } from '../repository/PalpiteRepository';
-import { palpiteSchema } from '../dto/PalpiteDTO';
+import { palpiteSchema, respostaSchema } from '../dto/PalpiteDTO';
 import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
 
 const diagnosticoController = new Hono<{ Bindings: Env }>();
@@ -139,6 +139,38 @@ diagnosticoController.get('/:id/palpites', async (c) => {
     return c.json({ success: true, data });
   } catch {
     return c.json({ success: false, error: 'Não foi possível carregar os palpites.' }, 500);
+  }
+});
+
+diagnosticoController.get('/:id/discussao', async (c) => {
+  const sessao = await requireSession(c);
+  if (!sessao) return c.json({ success: false, error: 'Não autenticado' }, 401);
+  const id = parseIdParam(c.req.param('id'));
+  const cursor = Number(c.req.query('cursor') ?? '0');
+  if (!id || !Number.isSafeInteger(cursor) || cursor < 0) return c.json({ success: false, error: 'Parâmetros inválidos.' }, 400);
+  try {
+    const data = await createExternalService(c.env.DB).listarDiscussao(id, sessao.usuarioId, cursor);
+    if (!data) return c.json({ success: false, error: 'Análise não encontrada ou não compartilhada.' }, 404);
+    return c.json({ success: true, data });
+  } catch {
+    return c.json({ success: false, error: 'Não foi possível carregar a discussão.' }, 500);
+  }
+});
+
+diagnosticoController.post('/:id/discussao', async (c) => {
+  const sessao = await requireSession(c);
+  if (!sessao) return c.json({ success: false, error: 'Não autenticado' }, 401);
+  const id = parseIdParam(c.req.param('id'));
+  if (!id) return c.json({ success: false, error: 'ID inválido' }, 400);
+  const parsed = respostaSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ success: false, error: parsed.error.issues[0].message }, 400);
+  try {
+    if (!await createExternalService(c.env.DB).responder(id, sessao.usuarioId, parsed.data)) {
+      return c.json({ success: false, error: 'Comentário não encontrado ou análise não compartilhada.' }, 404);
+    }
+    return c.json({ success: true }, 201);
+  } catch {
+    return c.json({ success: false, error: 'Não foi possível publicar sua resposta.' }, 500);
   }
 });
 

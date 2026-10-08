@@ -20,13 +20,15 @@ import { Badge } from '@Front-end/components/ui/badge';
 import { Button } from '@Front-end/components/ui/button';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { useApp } from '@Front-end/context/AppContext';
-import { analisarImagemComFallback } from '@Front-end/service/analisarImagemComFallback';
+import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
+import { mapApiResponseToFront } from '@Front-end/utils/diagnosticoMapper';
 import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { ANALYSIS_FLOW_MESSAGES } from '@Front-end/utils/analysisFlowNav';
 import { geolocationErrorMessage } from '@Front-end/utils/geolocation';
 import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
 
 type AnalysisPhase = 'analyzing' | 'complete' | 'error';
+const diagnosticoService = new DiagnosticoService();
 
 export default function IdentificacaoIAView() {
   const navigate = useNavigate();
@@ -96,11 +98,11 @@ export default function IdentificacaoIAView() {
         setStatusText('Identificando espécie e estágio de vida...');
         setProgress(68);
 
-        const { response, source } = await analisarImagemComFallback(
+        const response = mapApiResponseToFront(await diagnosticoService.analisar(
           pending.base64,
           pending.mimeType,
           pending.fileName
-        );
+        ));
 
         setProgress(100);
         setResultado(response);
@@ -117,12 +119,6 @@ export default function IdentificacaoIAView() {
               'A análise não foi salva no histórico. Sua sessão pode ter expirado — faça login novamente.'
             );
           }
-          if (source === 'mock') {
-            showToast(
-              'info',
-              'Servidor de IA indisponível — exibindo resultado de demonstração local.'
-            );
-          }
           setPhase('complete');
           setStatusText('Identificação concluída. Revise o resumo e avance quando quiser.');
         } else {
@@ -132,8 +128,8 @@ export default function IdentificacaoIAView() {
         }
       } catch {
         setPhase('error');
-        setStatusText('Erro inesperado ao processar a imagem.');
-        showToast('error', 'Erro inesperado ao processar a imagem.');
+        setStatusText('Não foi possível concluir a análise. Tente novamente mais tarde.');
+        showToast('error', 'Não foi possível concluir a análise. Tente novamente mais tarde.');
       } finally {
         setIsAnalyzing(false);
       }
@@ -293,7 +289,6 @@ export default function IdentificacaoIAView() {
       <PageInfoGrid
         className={`mt-10 ${isAnalyzing ? 'pointer-events-none opacity-50' : ''}`}
         title="O que a IA está fazendo"
-        subtitle="Prioriza o servidor de IA; em caso de indisponibilidade, usa resultado local de demonstração."
         items={[
           {
             icon: Brain,

@@ -111,7 +111,7 @@ export default function LoginView() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              <FieldDescription>Mínimo de 6 caracteres (protótipo mockado).</FieldDescription>
+              <FieldDescription>Mínimo de 6 caracteres.</FieldDescription>
             </Field>
 
             {error && <FieldError>{error}</FieldError>}

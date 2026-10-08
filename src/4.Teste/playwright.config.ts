@@ -4,7 +4,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 const testRoot = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(testRoot, '../..');
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5174';
+const testPort = new URL(baseURL).port || '5174';
 
 export default defineConfig({
   testDir: path.join(testRoot, 'e2e'),
@@ -29,10 +30,11 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: 'node ./scripts/db-setup-local.mjs --seed && npm run dev',
+    command: `node ./scripts/db-setup-local.mjs --seed && npm run dev -- --port ${testPort} --strictPort`,
     cwd: projectRoot,
+    env: { WORMIF_TEST_STATE_PATH: path.join(projectRoot, '.wrangler/test-state') },
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000
   }
 });

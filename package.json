@@ -49,7 +49,7 @@
     "db:migrate:local": "node ./scripts/db-setup-local.mjs",
     "db:seed:usuario:test": "wrangler d1 execute 019db345-a173-7000-8161-d7633937a443 --local --file=./database/seeds/d1/usuario-test-data.sql",
     "db:seed:diagnostico:test": "wrangler d1 execute 019db345-a173-7000-8161-d7633937a443 --local --file=./database/seeds/d1/diagnostico-test-data.sql",
-    "db:setup:local": "node ./scripts/db-setup-local.mjs --seed",
+    "db:setup:local": "node ./scripts/db-setup-local.mjs",
     "dev": "vite",
     "knip": "knip",
     "lint": "eslint .",

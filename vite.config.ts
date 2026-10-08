@@ -6,7 +6,11 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 export default defineConfig({
   plugins: [
     react(),
-    cloudflare(),
+    cloudflare({
+      persistState: process.env.WORMIF_TEST_STATE_PATH
+        ? { path: process.env.WORMIF_TEST_STATE_PATH }
+        : true,
+    }),
   ],
 	  server: {
 	    allowedHosts: true,

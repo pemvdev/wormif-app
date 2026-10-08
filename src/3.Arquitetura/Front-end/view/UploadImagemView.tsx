@@ -4,7 +4,6 @@ import {
   Egg,
   Bug,
   Leaf,
-  ImagePlus,
   Camera,
   Sun,
   Focus,
@@ -23,12 +22,11 @@ import { useFileValidator } from '@Front-end/hooks/useFileValidator';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { useApp } from '@Front-end/context/AppContext';
 import { buildAuthRedirectState } from '@Front-end/utils/authRedirect';
-import { SAMPLE_IMAGE_BASE64 } from '@Front-end/service/MockDiagnosticoService';
 
 export default function UploadImagemView() {
   const navigate = useNavigate();
   const { setPending, clearFlow } = useAnalysisFlow();
-  const { user, showToast, history, canAnalyze, guestRemainingAnalyses, guestDiagnosisLimit } =
+  const { user, history, canAnalyze, guestRemainingAnalyses, guestDiagnosisLimit } =
     useApp();
   const { file, preview, base64, error, isLoading, handleFile, reset } = useFileValidator();
 
@@ -55,15 +53,6 @@ export default function UploadImagemView() {
   const handleReset = () => {
     clearFlow();
     reset();
-  };
-
-  const handleSampleImage = async () => {
-    const bytes = Uint8Array.from(atob(SAMPLE_IMAGE_BASE64), (c) => c.charCodeAt(0));
-    const sampleFile = new File([bytes], 'exemplo-especime.png', { type: 'image/png' });
-    const ok = await handleFile(sampleFile);
-    if (ok) {
-      showToast('success', 'Imagem de exemplo carregada.');
-    }
   };
 
   return (
@@ -129,18 +118,6 @@ export default function UploadImagemView() {
             onReset={handleReset}
           />
 
-          {!preview && (
-            <Button
-              type="button"
-              variant="secondary"
-              className="w-full min-h-11"
-              onClick={handleSampleImage}
-            >
-              <ImagePlus className="w-4 h-4 mr-2" />
-              Usar imagem de exemplo
-            </Button>
-          )}
-
           {preview && base64 && (
             <Button
               type="button"
@@ -190,7 +167,7 @@ export default function UploadImagemView() {
           {
             icon: Camera,
             title: '1. Upload',
-            description: 'Selecione ou arraste a imagem do espécime. Você pode usar a imagem de exemplo para testar.'
+            description: 'Selecione ou arraste a imagem do espécime.'
           },
           {
             icon: Bug,

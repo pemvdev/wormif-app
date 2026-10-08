@@ -1,5 +1,5 @@
 import type { AnaliseExternaDetalhesDTO, AnalisesExternasPaginaDTO } from '../dto/AnaliseExternaDTO';
-import type { PalpiteDTO, SalvarPalpiteDTO } from '../dto/PalpiteDTO';
+import type { DiscussaoPaginaDTO, PalpiteDTO, SalvarPalpiteDTO, SalvarRespostaDTO } from '../dto/PalpiteDTO';
 import { PalpiteRepository } from '../repository/PalpiteRepository';
 import { DiagnosticoRepository } from '../repository/DiagnosticoRepository';
 import { UsuarioRepository } from '../repository/UsuarioRepository';
@@ -44,5 +44,23 @@ export class AnalisesExternasService {
   async listarRecebidos(id: number, autorId: string): Promise<PalpiteDTO[] | null> {
     if (!await this.diagnosticoRepository.buscarPorId(id, autorId)) return null;
     return this.palpiteRepository.listarRecebidos(id, autorId);
+  }
+
+  private async podeAcessarDiscussao(id: number, userId: string): Promise<boolean> {
+    const propria = await this.diagnosticoRepository.buscarPorId(id, userId);
+    if (propria) return propria.status === 'concluido';
+    return Boolean(await this.diagnosticoRepository.buscarExterna(id, userId));
+  }
+
+  async listarDiscussao(id: number, userId: string, cursor: number): Promise<DiscussaoPaginaDTO | null> {
+    if (!await this.podeAcessarDiscussao(id, userId)) return null;
+    const rows = await this.palpiteRepository.listarDiscussao(id, userId, cursor, 101);
+    const items = rows.slice(0, 100);
+    return { items, nextCursor: rows.length > 100 ? items[items.length - 1].sequencia : null };
+  }
+
+  async responder(id: number, userId: string, dto: SalvarRespostaDTO): Promise<boolean> {
+    if (!await this.podeAcessarDiscussao(id, userId)) return false;
+    return this.palpiteRepository.responder(id, userId, dto);
   }
 }

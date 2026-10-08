@@ -101,7 +101,7 @@ export default function PerfilView() {
         {[
           { label: 'Análises salvas', value: String(history.length) },
           { label: 'Plano atual', value: activePlanId === 'pro' ? 'Campo Pro' : activePlanId === 'enterprise' ? 'Equipes' : 'Essencial' },
-          { label: 'Conta', value: 'Ativa (mock)' }
+          { label: 'Conta', value: 'Ativa' }
         ].map((stat) => (
           <Card key={stat.label} className="p-4 border-border/80">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">{stat.label}</p>

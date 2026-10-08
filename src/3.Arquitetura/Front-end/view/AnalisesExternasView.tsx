@@ -158,8 +158,8 @@ function ExternalDetails({ id }: { id: string }) {
         <PalpiteForm data={data} onSaved={() => setReload((value) => value + 1)} />
       </section>
       <section className="border-t border-border pt-6">
-        <h2 className="text-base font-semibold mb-4">Palpites recentes</h2>
-        <PalpitesList palpites={data.palpites} />
+        <h2 className="text-base font-semibold mb-4">Discussão</h2>
+        <PalpitesList key={data.id} analiseId={data.id} />
       </section>
     </article>}
   </PageContainer>;

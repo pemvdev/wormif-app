@@ -4,7 +4,7 @@ import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
 import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
 import type { DiagnosticoHistoricoDTO } from '../dto/DiagnosticoHistoricoDTO';
 import type { AnaliseExternaDetalhesDTO, AnalisesExternasPaginaDTO } from '../dto/AnaliseExternaDTO';
-import type { PalpiteDTO, SalvarPalpiteDTO } from '../dto/PalpiteDTO';
+import type { DiscussaoPaginaDTO, PalpiteDTO, SalvarPalpiteDTO, SalvarRespostaDTO } from '../dto/PalpiteDTO';
 
 interface HistoricoListResponse {
   success: boolean;
@@ -86,6 +86,21 @@ export class DiagnosticoService {
       `/diagnostico/externas/${id}/palpite`, data, { allowErrorBody: true }
     ).catch(() => { throw new Error('Não foi possível salvar seu palpite. Tente novamente.'); });
     if (!response.success) throw new Error(response.error ?? 'Não foi possível salvar seu palpite.');
+  }
+
+  async listarDiscussao(id: number, cursor = 0): Promise<DiscussaoPaginaDTO> {
+    const response = await this.apiClient.get<{ success: boolean; data?: DiscussaoPaginaDTO; error?: string }>(
+      `/diagnostico/${id}/discussao?cursor=${cursor}`, { allowErrorBody: true }
+    ).catch(() => { throw new Error('Não foi possível carregar a discussão.'); });
+    if (!response.success || !response.data) throw new Error(response.error ?? 'Não foi possível carregar a discussão.');
+    return response.data;
+  }
+
+  async responder(id: number, data: SalvarRespostaDTO): Promise<void> {
+    const response = await this.apiClient.post<{ success: boolean; error?: string }>(
+      `/diagnostico/${id}/discussao`, data, { allowErrorBody: true }
+    ).catch(() => { throw new Error('Não foi possível publicar sua resposta.'); });
+    if (!response.success) throw new Error(response.error ?? 'Não foi possível publicar sua resposta.');
   }
 
   async buscarPorId(id: number): Promise<DiagnosticoHistoricoDTO> {
