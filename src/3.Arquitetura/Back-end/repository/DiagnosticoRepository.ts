@@ -1,20 +1,7 @@
+import { drizzle } from 'drizzle-orm/d1';
+import { eq, and, desc, sql } from 'drizzle-orm';
+import { diagnosticos } from '../db/schema';
 import { Diagnostico, type DiagnosticoBack, type StatusDiagnostico } from '../model/Diagnostico';
-
-type DiagnosticoRow = {
-  id: number;
-  diagnostic_date: string;
-  status: StatusDiagnostico;
-  confidence_level: number;
-  life_stage: DiagnosticoBack;
-  validated_by_specialist: number;
-  species: string;
-  common_name: string;
-  description: string;
-  characteristics_json: string;
-  habitat: string;
-  user_id: string | null;
-  imagem_key: string | null;
-};
 
 export const EXTERNAL_ACCESS_FROM = `
   FROM diagnosticos d
@@ -25,177 +12,129 @@ export const EXTERNAL_ACCESS_FROM = `
     AND d.user_id <> leitor.id AND d.status = 'concluido'
 `;
 
-const EXTERNAL_SELECT = `
-  SELECT d.id, d.diagnostic_date, d.status, d.confidence_level, d.life_stage,
-    d.validated_by_specialist, d.species, d.common_name, d.description,
-    d.characteristics_json, d.habitat, d.user_id, d.imagem_key, autor.nome AS autor_nome
-  ${EXTERNAL_ACCESS_FROM}
-`;
+
+type DiagnosticoRow = {
+  id: number; diagnostic_date: string; status: StatusDiagnostico; confidence_level: number;
+  life_stage: DiagnosticoBack; validated_by_specialist: number; species: string; common_name: string;
+  description: string; characteristics_json: string; habitat: string; user_id: string | null; imagem_key: string | null;
+};
 
 type AnaliseExternaRow = DiagnosticoRow & { autor_nome: string };
 
 function parseCharacteristics(value: string): string[] {
   try {
     const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .map((item) => (typeof item === 'string' ? item.trim() : String(item)))
-      .filter((item) => item.length > 0);
-  } catch {
-    return [];
-  }
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item) => (typeof item === 'string' ? item.trim() : String(item))).filter((item) => item.length > 0);
+  } catch { return []; }
 }
 
 export class DiagnosticoRepository {
-  constructor(private readonly database: D1Database) {}
+  private readonly db;
+  private readonly database: D1Database;
+  constructor(database: D1Database) {
+    this.database = database;
+    this.db = drizzle(database);
+  }
 
   async listarExternas(userId: string, query: string, limit: number, offset: number) {
-    const result = await this.database.prepare(`${EXTERNAL_SELECT}
-      AND (instr(lower(d.species), lower(?)) > 0 OR instr(lower(d.common_name), lower(?)) > 0)
-      ORDER BY d.diagnostic_date DESC, d.id DESC LIMIT ? OFFSET ?
-    `).bind(userId, query, query, limit, offset).all<AnaliseExternaRow>();
-    return result.results.map((row) => ({ diagnostico: this.mapRow(row), autorNome: row.autor_nome }));
+    const rows = await this.db.all<AnaliseExternaRow>(sql`
+      SELECT d.id, d.diagnostic_date, d.status, d.confidence_level, d.life_stage,
+        d.validated_by_specialist, d.species, d.common_name, d.description,
+        d.characteristics_json, d.habitat, d.user_id, d.imagem_key, autor.nome AS autor_nome
+      FROM diagnosticos d
+      JOIN usuarios autor ON autor.id = d.user_id
+      JOIN usuarios leitor ON leitor.id = ${userId}
+      WHERE leitor.intuito_uso = 'ANALISAR_OUTRAS_PESSOAS'
+        AND autor.permite_analise_por_terceiros = 1
+        AND d.user_id <> leitor.id AND d.status = 'concluido'
+        AND (instr(lower(d.species), lower(${query})) > 0 OR instr(lower(d.common_name), lower(${query})) > 0)
+      ORDER BY d.diagnostic_date DESC, d.id DESC LIMIT ${limit} OFFSET ${offset}
+    `);
+    return rows.map((row) => ({ diagnostico: this.mapRow(row), autorNome: row.autor_nome }));
   }
 
   async buscarExterna(id: number, userId: string) {
-    const row = await this.database.prepare(`${EXTERNAL_SELECT} AND d.id = ?`)
-      .bind(userId, id).first<AnaliseExternaRow>();
+    const row = await this.db.get<AnaliseExternaRow>(sql`
+      SELECT d.id, d.diagnostic_date, d.status, d.confidence_level, d.life_stage,
+        d.validated_by_specialist, d.species, d.common_name, d.description,
+        d.characteristics_json, d.habitat, d.user_id, d.imagem_key, autor.nome AS autor_nome
+      FROM diagnosticos d
+      JOIN usuarios autor ON autor.id = d.user_id
+      JOIN usuarios leitor ON leitor.id = ${userId}
+      WHERE leitor.intuito_uso = 'ANALISAR_OUTRAS_PESSOAS'
+        AND autor.permite_analise_por_terceiros = 1
+        AND d.user_id <> leitor.id AND d.status = 'concluido'
+        AND d.id = ${id}
+    `);
     return row ? { diagnostico: this.mapRow(row), autorNome: row.autor_nome } : null;
   }
 
   async salvar(diagnostico: Diagnostico): Promise<Diagnostico> {
-    const result = await this.database
-      .prepare(
-        `
-        INSERT INTO diagnosticos (
-          diagnostic_date,
-          status,
-          confidence_level,
-          life_stage,
-          validated_by_specialist,
-          species,
-          common_name,
-          description,
-          characteristics_json,
-          habitat,
-          source,
-          user_id,
-          imagem_key
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `
-      )
-      .bind(
-        diagnostico.data,
-        diagnostico.status,
-        diagnostico.nivelConfianca,
-        diagnostico.diagnosticoBack,
-        diagnostico.validadoPorEspecialista ? 1 : 0,
-        diagnostico.especie,
-        diagnostico.nomeComum,
-        diagnostico.descricao,
-        JSON.stringify(diagnostico.caracteristicas),
-        diagnostico.habitat,
-        'application',
-        diagnostico.userId,
-        diagnostico.imagemKey
-      )
-      .run();
-
-    if (!result.success) {
-      throw new Error('Falha ao salvar diagnostico no banco de dados');
-    }
-
+    const result = await this.db.insert(diagnosticos).values({
+      diagnosticDate: diagnostico.data,
+      status: diagnostico.status,
+      confidenceLevel: diagnostico.nivelConfianca,
+      lifeStage: diagnostico.diagnosticoBack,
+      validatedBySpecialist: diagnostico.validadoPorEspecialista ? 1 : 0,
+      species: diagnostico.especie,
+      commonName: diagnostico.nomeComum,
+      description: diagnostico.descricao,
+      characteristicsJson: JSON.stringify(diagnostico.caracteristicas),
+      habitat: diagnostico.habitat,
+      source: 'application',
+      userId: diagnostico.userId,
+      imagemKey: diagnostico.imagemKey,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }).run();
+    if (!result.success) throw new Error('Falha ao salvar diagnostico no banco de dados');
     diagnostico.id = result.meta.last_row_id;
     return diagnostico;
   }
 
-  async listarPorUsuario(userId: string): Promise<{ diagnostico: Diagnostico; totalRespostas: number }[]> {
-    const result = await this.database
-      .prepare(
-        `
-        SELECT
-          id,
-          diagnostic_date,
-          status,
-          confidence_level,
-          life_stage,
-          validated_by_specialist,
-          species,
-          common_name,
-          description,
-          characteristics_json,
-          habitat,
-          user_id,
-          imagem_key,
-          (SELECT COUNT(*) FROM diagnostico_discussao resposta
-            WHERE resposta.diagnostico_id = diagnosticos.id
-              AND resposta.usuario_id <> diagnosticos.user_id) AS total_respostas
-        FROM diagnosticos
-        WHERE user_id = ?
-        ORDER BY diagnostic_date DESC, id DESC
-        `
-      )
-      .bind(userId)
-      .all<DiagnosticoRow & { total_respostas: number }>();
-
-    return result.results.map((row) => ({ diagnostico: this.mapRow(row), totalRespostas: row.total_respostas }));
+  async listarPorUsuario(userId: string) {
+    const rows = await this.db.select({
+      id: diagnosticos.id,
+      diagnosticDate: diagnosticos.diagnosticDate,
+      status: diagnosticos.status,
+      confidenceLevel: diagnosticos.confidenceLevel,
+      lifeStage: diagnosticos.lifeStage,
+      validatedBySpecialist: diagnosticos.validatedBySpecialist,
+      species: diagnosticos.species,
+      commonName: diagnosticos.commonName,
+      description: diagnosticos.description,
+      characteristicsJson: diagnosticos.characteristicsJson,
+      habitat: diagnosticos.habitat,
+      userId: diagnosticos.userId,
+      imagemKey: diagnosticos.imagemKey,
+      totalRespostas: sql<number>`(SELECT COUNT(*) FROM diagnostico_discussao resposta WHERE resposta.diagnostico_id = ${diagnosticos.id} AND resposta.usuario_id <> ${diagnosticos.userId})`,
+    }).from(diagnosticos).where(eq(diagnosticos.userId, userId)).orderBy(desc(diagnosticos.diagnosticDate), desc(diagnosticos.id)).all();
+    return rows.map((row) => ({ diagnostico: this.mapRow({
+      id: row.id, diagnostic_date: row.diagnosticDate, status: row.status, confidence_level: row.confidenceLevel,
+      life_stage: row.lifeStage, validated_by_specialist: row.validatedBySpecialist, species: row.species,
+      common_name: row.commonName, description: row.description, characteristics_json: row.characteristicsJson,
+      habitat: row.habitat, user_id: row.userId, imagem_key: row.imagemKey,
+    }), totalRespostas: row.totalRespostas }));
   }
 
-  async buscarPorId(id: number, userId: string): Promise<Diagnostico | null> {
-    const row = await this.database
-      .prepare(
-        `
-        SELECT
-          id,
-          diagnostic_date,
-          status,
-          confidence_level,
-          life_stage,
-          validated_by_specialist,
-          species,
-          common_name,
-          description,
-          characteristics_json,
-          habitat,
-          user_id,
-          imagem_key
-        FROM diagnosticos
-        WHERE id = ? AND user_id = ?
-        `
-      )
-      .bind(id, userId)
-      .first<DiagnosticoRow>();
-
-    return row ? this.mapRow(row) : null;
+  async buscarPorId(id: number, userId: string) {
+    const row = await this.db.select().from(diagnosticos).where(and(eq(diagnosticos.id, id), eq(diagnosticos.userId, userId))).get();
+    if (!row) return null;
+    return this.mapRow({
+      id: row.id, diagnostic_date: row.diagnosticDate, status: row.status, confidence_level: row.confidenceLevel,
+      life_stage: row.lifeStage, validated_by_specialist: row.validatedBySpecialist, species: row.species,
+      common_name: row.commonName, description: row.description, characteristics_json: row.characteristicsJson,
+      habitat: row.habitat, user_id: row.userId, imagem_key: row.imagemKey,
+    });
   }
 
   async excluir(id: number, userId: string): Promise<boolean> {
-    const result = await this.database
-      .prepare('DELETE FROM diagnosticos WHERE id = ? AND user_id = ?')
-      .bind(id, userId)
-      .run();
-
-    return result.success && (result.meta.changes ?? 0) > 0;
+    const result = await this.db.delete(diagnosticos).where(and(eq(diagnosticos.id, id), eq(diagnosticos.userId, userId))).run();
+    return (result.meta?.changes ?? 0) > 0;
   }
 
   private mapRow(row: DiagnosticoRow): Diagnostico {
-    return new Diagnostico(
-      row.id,
-      row.diagnostic_date,
-      row.status,
-      row.confidence_level,
-      row.life_stage,
-      row.validated_by_specialist === 1,
-      row.species,
-      row.common_name,
-      row.description,
-      parseCharacteristics(row.characteristics_json),
-      row.habitat,
-      row.user_id,
-      row.imagem_key
-    );
+    return new Diagnostico(row.id, row.diagnostic_date, row.status, row.confidence_level, row.life_stage, row.validated_by_specialist === 1, row.species, row.common_name, row.description, parseCharacteristics(row.characteristics_json), row.habitat, row.user_id, row.imagem_key);
   }
 }

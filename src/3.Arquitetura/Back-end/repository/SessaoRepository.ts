@@ -1,37 +1,28 @@
-type SessaoRow = {
-  token: string;
-  usuario_id: string;
-  expires_at: string;
-};
+import { drizzle } from 'drizzle-orm/d1';
+import { eq, lt, sql } from 'drizzle-orm';
+import { sessoes } from '../db/schema';
 
 export class SessaoRepository {
-  constructor(private readonly database: D1Database) {}
+  private readonly db;
 
-  async criar(token: string, usuarioId: string, expiresAt: string): Promise<void> {
-    const result = await this.database
-      .prepare('INSERT INTO sessoes (token, usuario_id, expires_at) VALUES (?, ?, ?)')
-      .bind(token, usuarioId, expiresAt)
-      .run();
-
-    if (!result.success) {
-      throw new Error('Falha ao criar sessão');
-    }
+  constructor(database: D1Database) {
+    this.db = drizzle(database);
   }
 
-  async buscarPorToken(token: string): Promise<SessaoRow | null> {
-    return this.database
-      .prepare('SELECT token, usuario_id, expires_at FROM sessoes WHERE token = ?')
-      .bind(token)
-      .first<SessaoRow>();
+  async criar(token: string, usuarioId: string, expiresAt: string): Promise<void> {
+    await this.db.insert(sessoes).values({ token, usuarioId, expiresAt });
+  }
+
+  async buscarPorToken(token: string) {
+    const row = await this.db.select().from(sessoes).where(eq(sessoes.token, token)).get();
+    return row ? { token: row.token, usuario_id: row.usuarioId, expires_at: row.expiresAt } : null;
   }
 
   async excluir(token: string): Promise<void> {
-    await this.database.prepare('DELETE FROM sessoes WHERE token = ?').bind(token).run();
+    await this.db.delete(sessoes).where(eq(sessoes.token, token));
   }
 
   async excluirExpiradas(): Promise<void> {
-    await this.database
-      .prepare("DELETE FROM sessoes WHERE expires_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now')")
-      .run();
+    await this.db.delete(sessoes).where(lt(sessoes.expiresAt, sql`strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`));
   }
 }

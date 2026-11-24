@@ -1,6 +1,7 @@
 import type { ComentarioDiscussaoDTO, PalpiteDTO, SalvarPalpiteDTO, SalvarRespostaDTO } from '../dto/PalpiteDTO';
 import type { DiagnosticoBack } from '../model/Diagnostico';
-import { EXTERNAL_ACCESS_FROM } from './DiagnosticoRepository';
+import { drizzle } from 'drizzle-orm/d1';
+import { sql } from 'drizzle-orm';
 
 type ComentarioRow = {
   id: string;
@@ -18,20 +19,6 @@ type ComentarioRow = {
   atualizado_em: string;
 };
 
-const COMMENT_SELECT = `
-  SELECT p.id, p.sequencia, p.parent_id, p.usuario_id, u.nome, u.ocupacao,
-    u.foto_perfil_url, u.linkedin, p.especie, p.estagio, p.comentario, p.criado_em, p.atualizado_em
-  FROM diagnostico_discussao p JOIN usuarios u ON u.id = p.usuario_id
-`;
-
-const DISCUSSION_ACCESS_FROM = `
-  FROM diagnosticos d JOIN usuarios autor ON autor.id = d.user_id
-  JOIN usuarios leitor ON leitor.id = ?
-  WHERE d.status = 'concluido' AND (
-    d.user_id = leitor.id OR (leitor.intuito_uso = 'ANALISAR_OUTRAS_PESSOAS'
-      AND autor.permite_analise_por_terceiros = 1)
-  )
-`;
 
 function mapComment(row: ComentarioRow): ComentarioDiscussaoDTO {
   return {
@@ -48,58 +35,97 @@ function isPalpite(item: ComentarioDiscussaoDTO): item is PalpiteDTO {
   return item.parentId === null && item.especie !== null && item.estagio !== null;
 }
 
+import { drizzle } from 'drizzle-orm/d1';
+
 export class PalpiteRepository {
-  constructor(private readonly database: D1Database) {}
+  private readonly db;
+  private readonly database: D1Database;
+  constructor(database: D1Database) {
+    this.database = database;
+    this.db = drizzle(database);
+  }
 
   async salvar(id: number, userId: string, dto: SalvarPalpiteDTO): Promise<boolean> {
     const now = new Date().toISOString();
-    const result = await this.database.prepare(`
+    const result = await this.db.run(sql`
       INSERT INTO diagnostico_discussao (id, diagnostico_id, usuario_id, especie, estagio, comentario, criado_em, atualizado_em)
-      SELECT ?, d.id, leitor.id, ?, ?, ?, ?, ? ${EXTERNAL_ACCESS_FROM} AND d.id = ?
+      SELECT ${crypto.randomUUID()}, d.id, leitor.id, ${dto.especie}, ${dto.estagio}, ${dto.comentario}, ${now}, ${now}
+      FROM diagnosticos d
+      JOIN usuarios autor ON autor.id = d.user_id
+      JOIN usuarios leitor ON leitor.id = ${userId}
+      WHERE leitor.intuito_uso = 'ANALISAR_OUTRAS_PESSOAS'
+        AND autor.permite_analise_por_terceiros = 1
+        AND d.user_id <> leitor.id AND d.status = 'concluido'
+        AND d.id = ${id}
       ON CONFLICT (diagnostico_id, usuario_id) WHERE parent_id IS NULL DO UPDATE SET
         especie = excluded.especie, estagio = excluded.estagio,
         comentario = excluded.comentario, atualizado_em = excluded.atualizado_em
-    `).bind(crypto.randomUUID(), dto.especie, dto.estagio, dto.comentario, now, now, userId, id).run();
+    `);
     if (!result.success) throw new Error('Falha ao salvar palpite');
-    return result.meta.changes > 0;
+    return (result.meta?.changes ?? 0) > 0;
   }
 
   async listar(id: number, userId: string, apenasMeu = false): Promise<PalpiteDTO[]> {
-    const result = await this.database.prepare(`${COMMENT_SELECT}
-      WHERE p.diagnostico_id = ? AND p.parent_id IS NULL AND EXISTS (
-        SELECT 1 ${EXTERNAL_ACCESS_FROM} AND d.id = p.diagnostico_id
-      ) ${apenasMeu ? 'AND p.usuario_id = ?' : ''}
+    const rows = await this.db.all<ComentarioRow>(sql`
+      SELECT p.id, p.sequencia, p.parent_id, p.usuario_id, u.nome, u.ocupacao,
+        u.foto_perfil_url, u.linkedin, p.especie, p.estagio, p.comentario, p.criado_em, p.atualizado_em
+      FROM diagnostico_discussao p JOIN usuarios u ON u.id = p.usuario_id
+      WHERE p.diagnostico_id = ${id} AND p.parent_id IS NULL AND EXISTS (
+        SELECT 1 FROM diagnosticos d JOIN usuarios autor ON autor.id = d.user_id
+        JOIN usuarios leitor ON leitor.id = ${userId}
+        WHERE leitor.intuito_uso = 'ANALISAR_OUTRAS_PESSOAS'
+          AND autor.permite_analise_por_terceiros = 1
+          AND d.user_id <> leitor.id AND d.status = 'concluido'
+          AND d.id = p.diagnostico_id
+      ) ${apenasMeu ? sql`AND p.usuario_id = ${userId}` : sql``}
       ORDER BY p.atualizado_em DESC, p.usuario_id LIMIT 20
-    `).bind(...(apenasMeu ? [id, userId, userId] : [id, userId])).all<ComentarioRow>();
-    return result.results.map(mapComment).filter(isPalpite);
+    `);
+    return rows.map(mapComment).filter(isPalpite);
   }
 
   async listarRecebidos(id: number, autorId: string): Promise<PalpiteDTO[]> {
-    const result = await this.database.prepare(`${COMMENT_SELECT}
-      WHERE p.diagnostico_id = ? AND p.parent_id IS NULL AND EXISTS (
-        SELECT 1 FROM diagnosticos d WHERE d.id = p.diagnostico_id AND d.user_id = ?
+    const rows = await this.db.all<ComentarioRow>(sql`
+      SELECT p.id, p.sequencia, p.parent_id, p.usuario_id, u.nome, u.ocupacao,
+        u.foto_perfil_url, u.linkedin, p.especie, p.estagio, p.comentario, p.criado_em, p.atualizado_em
+      FROM diagnostico_discussao p JOIN usuarios u ON u.id = p.usuario_id
+      WHERE p.diagnostico_id = ${id} AND p.parent_id IS NULL AND EXISTS (
+        SELECT 1 FROM diagnosticos d WHERE d.id = p.diagnostico_id AND d.user_id = ${autorId}
       ) ORDER BY p.atualizado_em DESC, p.usuario_id LIMIT 20
-    `).bind(id, autorId).all<ComentarioRow>();
-    return result.results.map(mapComment).filter(isPalpite);
+    `);
+    return rows.map(mapComment).filter(isPalpite);
   }
 
   async listarDiscussao(id: number, userId: string, cursor: number, limit: number): Promise<ComentarioDiscussaoDTO[]> {
-    const result = await this.database.prepare(`${COMMENT_SELECT}
-      WHERE p.diagnostico_id = ? AND p.sequencia > ? AND EXISTS (
-        SELECT 1 ${DISCUSSION_ACCESS_FROM} AND d.id = p.diagnostico_id
-      ) ORDER BY p.sequencia LIMIT ?
-    `).bind(id, cursor, userId, limit).all<ComentarioRow>();
-    return result.results.map(mapComment);
+    const rows = await this.db.all<ComentarioRow>(sql`
+      SELECT p.id, p.sequencia, p.parent_id, p.usuario_id, u.nome, u.ocupacao,
+        u.foto_perfil_url, u.linkedin, p.especie, p.estagio, p.comentario, p.criado_em, p.atualizado_em
+      FROM diagnostico_discussao p JOIN usuarios u ON u.id = p.usuario_id
+      WHERE p.diagnostico_id = ${id} AND p.sequencia > ${cursor} AND EXISTS (
+        SELECT 1 FROM diagnosticos d JOIN usuarios autor ON autor.id = d.user_id
+        JOIN usuarios leitor ON leitor.id = ${userId}
+        WHERE d.status = 'concluido' AND (
+          d.user_id = leitor.id OR (leitor.intuito_uso = 'ANALISAR_OUTRAS_PESSOAS'
+            AND autor.permite_analise_por_terceiros = 1)
+        ) AND d.id = p.diagnostico_id
+      ) ORDER BY p.sequencia LIMIT ${limit}
+    `);
+    return rows.map(mapComment);
   }
 
   async responder(id: number, userId: string, dto: SalvarRespostaDTO): Promise<boolean> {
     const now = new Date().toISOString();
-    const result = await this.database.prepare(`
+    const result = await this.db.run(sql`
       INSERT INTO diagnostico_discussao (id, diagnostico_id, usuario_id, parent_id, comentario, criado_em, atualizado_em)
-      SELECT ?, d.id, leitor.id, ?, ?, ?, ? ${DISCUSSION_ACCESS_FROM} AND d.id = ?
-        AND EXISTS (SELECT 1 FROM diagnostico_discussao pai WHERE pai.id = ? AND pai.diagnostico_id = d.id)
-    `).bind(crypto.randomUUID(), dto.parentId, dto.comentario, now, now, userId, id, dto.parentId).run();
+      SELECT ${crypto.randomUUID()}, d.id, leitor.id, ${dto.parentId}, ${dto.comentario}, ${now}, ${now}
+      FROM diagnosticos d JOIN usuarios autor ON autor.id = d.user_id
+      JOIN usuarios leitor ON leitor.id = ${userId}
+      WHERE d.status = 'concluido' AND (
+        d.user_id = leitor.id OR (leitor.intuito_uso = 'ANALISAR_OUTRAS_PESSOAS'
+          AND autor.permite_analise_por_terceiros = 1)
+      ) AND d.id = ${id}
+        AND EXISTS (SELECT 1 FROM diagnostico_discussao pai WHERE pai.id = ${dto.parentId} AND pai.diagnostico_id = d.id)
+    `);
     if (!result.success) throw new Error('Falha ao salvar resposta');
-    return result.meta.changes > 0;
+    return (result.meta?.changes ?? 0) > 0;
   }
 }

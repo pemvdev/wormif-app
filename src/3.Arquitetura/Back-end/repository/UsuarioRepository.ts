@@ -1,146 +1,68 @@
+import { drizzle } from 'drizzle-orm/d1';
+import { eq, sql } from 'drizzle-orm';
+import { usuarios } from '../db/schema';
 import { Usuario } from '../model/Usuario';
 import type { IntuitoUsoAplicacao } from '../dto/AuthDTO';
 
-type UsuarioRow = {
-  id: string;
-  nome: string;
-  email: string;
-  senha_hash: string;
-  senha_salt: string;
-  ocupacao: string | null;
-  foto_perfil_url: string | null;
-  linkedin: string | null;
-  intuito_uso: IntuitoUsoAplicacao | null;
-  permite_analise_por_terceiros: number | null;
-  data_cadastro: string;
-};
-
 export class UsuarioRepository {
-  constructor(private readonly database: D1Database) {}
+  private readonly db;
+
+  constructor(database: D1Database) {
+    this.db = drizzle(database);
+  }
 
   async criar(usuario: Usuario): Promise<Usuario> {
-    const result = await this.database
-      .prepare(
-        `
-        INSERT INTO usuarios (
-          id,
-          nome,
-          email,
-          senha_hash,
-          senha_salt,
-          ocupacao,
-          foto_perfil_url,
-          linkedin,
-          intuito_uso,
-          permite_analise_por_terceiros,
-          data_cadastro
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `
-      )
-      .bind(
-        usuario.id,
-        usuario.nome,
-        usuario.email.toLowerCase(),
-        usuario.senhaHash,
-        usuario.senhaSalt,
-        usuario.profissao,
-        usuario.fotoPerfilUrl,
-        usuario.linkedin,
-        usuario.intuitoUso,
-        usuario.permiteAnalisePorTerceiros ? 1 : 0,
-        usuario.dataCadastro
-      )
-      .run();
-
-    if (!result.success) {
-      throw new Error('Falha ao criar usuário');
-    }
-
+    await this.db.insert(usuarios).values({
+      id: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email.toLowerCase(),
+      senhaHash: usuario.senhaHash,
+      senhaSalt: usuario.senhaSalt,
+      ocupacao: usuario.profissao,
+      fotoPerfilUrl: usuario.fotoPerfilUrl,
+      linkedin: usuario.linkedin,
+      intuitoUso: usuario.intuitoUso,
+      permiteAnalisePorTerceiros: usuario.permiteAnalisePorTerceiros ? 1 : 0,
+      dataCadastro: usuario.dataCadastro,
+    });
     return usuario;
   }
 
   async buscarPorEmail(email: string): Promise<Usuario | null> {
-    const row = await this.database
-      .prepare(
-        `
-        SELECT
-          id,
-          nome,
-          email,
-          senha_hash,
-          senha_salt,
-          ocupacao,
-          foto_perfil_url,
-          linkedin,
-          intuito_uso,
-          permite_analise_por_terceiros,
-          data_cadastro
-        FROM usuarios
-        WHERE email = ?
-        `
-      )
-      .bind(email.toLowerCase())
-      .first<UsuarioRow>();
-
+    const row = await this.db.select().from(usuarios).where(eq(usuarios.email, email.toLowerCase())).get();
     return row ? this.mapRow(row) : null;
   }
 
   async atualizarPerfil(usuario: Usuario): Promise<boolean> {
-    const result = await this.database.prepare(`
-      UPDATE usuarios SET nome = ?, email = ?, ocupacao = ?, foto_perfil_url = ?,
-        linkedin = ?, intuito_uso = ?, permite_analise_por_terceiros = ?
-      WHERE id = ? AND NOT EXISTS (
-        SELECT 1 FROM usuarios WHERE email = ? AND id <> ?
+    const result = await this.db.run(sql`
+      UPDATE usuarios SET nome = ${usuario.nome}, email = ${usuario.email}, ocupacao = ${usuario.profissao},
+        foto_perfil_url = ${usuario.fotoPerfilUrl}, linkedin = ${usuario.linkedin},
+        intuito_uso = ${usuario.intuitoUso}, permite_analise_por_terceiros = ${usuario.permiteAnalisePorTerceiros ? 1 : 0}
+      WHERE id = ${usuario.id} AND NOT EXISTS (
+        SELECT 1 FROM usuarios WHERE email = ${usuario.email} AND id <> ${usuario.id}
       )
-    `).bind(
-      usuario.nome, usuario.email, usuario.profissao, usuario.fotoPerfilUrl,
-      usuario.linkedin, usuario.intuitoUso, usuario.permiteAnalisePorTerceiros ? 1 : 0,
-      usuario.id, usuario.email, usuario.id
-    ).run();
-    if (!result.success) throw new Error('Falha ao atualizar perfil');
-    return result.meta.changes > 0;
+    `);
+    return (result.meta?.changes ?? 0) > 0;
   }
 
   async buscarPorId(id: string): Promise<Usuario | null> {
-    const row = await this.database
-      .prepare(
-        `
-        SELECT
-          id,
-          nome,
-          email,
-          senha_hash,
-          senha_salt,
-          ocupacao,
-          foto_perfil_url,
-          linkedin,
-          intuito_uso,
-          permite_analise_por_terceiros,
-          data_cadastro
-        FROM usuarios
-        WHERE id = ?
-        `
-      )
-      .bind(id)
-      .first<UsuarioRow>();
-
+    const row = await this.db.select().from(usuarios).where(eq(usuarios.id, id)).get();
     return row ? this.mapRow(row) : null;
   }
 
-  private mapRow(row: UsuarioRow): Usuario {
+  private mapRow(row: typeof usuarios.$inferSelect): Usuario {
     return new Usuario(
       row.id,
       row.nome,
       row.email,
-      row.senha_hash,
-      row.senha_salt,
+      row.senhaHash,
+      row.senhaSalt,
       row.ocupacao,
-      row.foto_perfil_url,
+      row.fotoPerfilUrl,
       row.linkedin,
-      row.intuito_uso,
-      row.permite_analise_por_terceiros === 1,
-      row.data_cadastro
+      row.intuitoUso as IntuitoUsoAplicacao | null,
+      row.permiteAnalisePorTerceiros === 1,
+      row.dataCadastro,
     );
   }
 }
