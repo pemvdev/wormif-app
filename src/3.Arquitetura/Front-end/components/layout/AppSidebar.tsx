@@ -180,8 +180,8 @@ export function AppSidebar({
     <aside
       className={cn(
         'flex flex-col border-r border-border/80 bg-card/95 backdrop-blur-md',
-        'w-[17rem] shrink-0',
-        'fixed inset-y-0 left-0 z-50 lg:static lg:z-auto',
+        'w-[17rem] shrink-0 h-screen',
+        'fixed inset-y-0 left-0 z-50 lg:static lg:z-auto lg:h-screen lg:sticky lg:top-0',
         'transition-transform duration-200 ease-out',
         mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         className

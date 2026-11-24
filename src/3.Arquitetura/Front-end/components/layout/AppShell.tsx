@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router';
 import { Menu } from 'lucide-react';
 import { AppSidebar } from '@Front-end/components/layout/AppSidebar';
+import { BrandLogo } from '@Front-end/components/layout/BrandLogo';
 import { ToastBanner } from '@Front-end/components/layout/ToastBanner';
 import { useApp } from '@Front-end/context/AppContext';
 import { Button } from '@Front-end/components/ui/button';
@@ -66,6 +67,9 @@ export function AppShell() {
             >
               <Menu className="w-5 h-5" />
             </Button>
+            <div className="lg:hidden">
+              <BrandLogo />
+            </div>
           </header>
 
           <main
