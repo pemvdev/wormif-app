@@ -87,6 +87,11 @@ Fluxo de análise: **Upload → Identificação IA → Resultado** (stepper no t
 - O app abre em `/upload` — não exige login para começar.
 - Até **3 análises gratuitas** sem conta (contador na tela de upload).
 - Resultados são exibidos normalmente; o histórico **não** é salvo no servidor até o login.
+
+## Banco de dados (Drizzle)
+
+O projeto adota Drizzle ORM sobre o D1. Configuração em `drizzle.config.ts`. Schema em `src/3.Arquitetura/Back-end/db/schema.ts`.
+Repositórios simples (Sessao, Usuario) já usam Drizzle; os demais ainda usam SQL direto sobre D1 e serão migrados gradualmente.
 - As análises feitas como visitante ficam em `sessionStorage` e são sincronizadas ao **entrar** ou **cadastrar** (`POST /api/diagnostico/registrar`).
 - **Histórico**, **perfil**, **configurações**, **geolocalização** e **planos** exigem login (menu mostra aviso e redireciona para `/login`).
 
