@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+import type { EstagioDiagnostico } from '../../shared/EstagioDiagnostico';
 
 export const palpiteSchema = z.object({
   especie: z.string().trim().min(1, 'Informe a espécie do seu palpite.').max(200, 'Use até 200 caracteres para a espécie.'),

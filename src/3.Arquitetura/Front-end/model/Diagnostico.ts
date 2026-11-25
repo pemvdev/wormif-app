@@ -1,5 +1,5 @@
-import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
-export type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+import type { EstagioDiagnostico } from '../../shared/EstagioDiagnostico';
+export type { EstagioDiagnostico } from '../../shared/EstagioDiagnostico';
 
 export type StatusDiagnostico = 'processando' | 'concluido' | 'erro';
 export interface Diagnostico {

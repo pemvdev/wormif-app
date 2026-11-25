@@ -1,5 +1,5 @@
 import type { StatusDiagnostico } from '../model/Diagnostico';
-import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+import type { EstagioDiagnostico } from '../../shared/EstagioDiagnostico';
 
 export interface DiagnosticoHistoricoDTO {
   id: number;

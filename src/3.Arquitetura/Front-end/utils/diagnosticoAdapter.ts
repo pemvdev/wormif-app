@@ -1,4 +1,4 @@
-import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+import type { EstagioDiagnostico } from '../../shared/EstagioDiagnostico';
 import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
 import type { DiagnosticoHistoricoDTO } from '../dto/DiagnosticoHistoricoDTO';
 import type { AnalysisHistoryItem } from '../context/AppContext';

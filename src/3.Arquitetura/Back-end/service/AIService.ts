@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import type { AIConfig } from '../config/AIConfig';
 import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
-import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+import type { EstagioDiagnostico } from '../../shared/EstagioDiagnostico';
 
 const UNKNOWN_SPECIES = new Set(
   [

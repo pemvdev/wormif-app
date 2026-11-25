@@ -1,5 +1,5 @@
 import type { ComentarioDiscussaoDTO, PalpiteDTO, SalvarPalpiteDTO, SalvarRespostaDTO } from '../dto/PalpiteDTO';
-import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+import type { EstagioDiagnostico } from '../../shared/EstagioDiagnostico';
 import { drizzle } from 'drizzle-orm/d1';
 import { sql } from 'drizzle-orm';
 

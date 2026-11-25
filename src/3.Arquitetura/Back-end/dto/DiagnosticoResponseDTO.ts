@@ -1,4 +1,4 @@
-import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+import type { EstagioDiagnostico } from '../../shared/EstagioDiagnostico';
 
 export interface DiagnosticoResponseDTO {
   success: boolean;

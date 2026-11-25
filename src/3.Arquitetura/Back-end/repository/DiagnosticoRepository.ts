@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/d1';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { diagnosticos } from '../db/schema';
 import { Diagnostico, type StatusDiagnostico } from '../model/Diagnostico';
-import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+import type { EstagioDiagnostico } from '../../shared/EstagioDiagnostico';
 
 export const EXTERNAL_ACCESS_FROM = `
   FROM diagnosticos d

@@ -8,7 +8,7 @@ import {
   type ReactNode
 } from 'react';
 import { getAuthToken, setUnauthorizedHandler } from '@Front-end/api/authToken';
-import type { EstagioDiagnostico } from '@/3.Arquitetura/Dominio/EstagioDiagnostico';
+import type { EstagioDiagnostico } from '@/3.Arquitetura/shared/EstagioDiagnostico';
 import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
 import {
   canGuestAnalyze,
@@ -142,7 +142,7 @@ function AppStateProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setHistory([]);
       setGuestRemainingAnalyses(getGuestRemainingAnalyses());
-      showToast('info', 'SessÃƒÂ£o expirada ou invÃƒÂ¡lida. FaÃƒÂ§a login novamente.');
+      showToast('info', 'Sessão expirada ou inválida. Faça login novamente.');
     });
     return () => setUnauthorizedHandler(null);
   }, [showToast]);
@@ -201,7 +201,7 @@ function AppStateProvider({ children }: { children: ReactNode }) {
     await refreshHistory();
     setGuestRemainingAnalyses(GUEST_DIAGNOSIS_LIMIT);
     if (synced > 0) {
-      showToast('success', `${synced} anÃƒÂ¡lise(s) salva(s) no histÃƒÂ³rico.`);
+      showToast('success', `${synced} análise(s) salva(s) no histórico.`);
     } else {
       showToast('success', 'Login realizado com sucesso.');
     }
@@ -214,7 +214,7 @@ function AppStateProvider({ children }: { children: ReactNode }) {
     const synced = await syncPendingGuestDiagnoses();
     await refreshHistory();
     setGuestRemainingAnalyses(GUEST_DIAGNOSIS_LIMIT);
-    showToast('success', synced > 0 ? `Conta criada. ${synced} anÃ¡lise(s) salva(s) no histÃ³rico.` : 'Conta criada. Bem-vindo ao Wormif!');
+    showToast('success', synced > 0 ? `Conta criada. ${synced} análise(s) salva(s) no histórico.` : 'Conta criada. Bem-vindo ao Wormif!');
     return { ok: true };
   }, [createAccount, showToast, syncPendingGuestDiagnoses, refreshHistory]);
 
@@ -222,7 +222,7 @@ function AppStateProvider({ children }: { children: ReactNode }) {
     endSession();
     setHistory([]);
     setGuestRemainingAnalyses(getGuestRemainingAnalyses());
-    showToast('info', 'SessÃ£o encerrada.');
+    showToast('info', 'Sessão encerrada.');
   }, [endSession, showToast]);
 
   const canAnalyze = useCallback(() => {
@@ -234,7 +234,7 @@ function AppStateProvider({ children }: { children: ReactNode }) {
     async (result: DiagnosticoResponseDTO, localizacao?: AnalysisHistoryItem['localizacao'], imagem?: UploadImagemDTO) => {
       if (user) return;
       const imageSaved = await addPendingGuestDiagnosis(result, localizacao, imagem);
-      if (!imageSaved) showToast('info', 'A anÃƒÂ¡lise foi guardada, mas nÃƒÂ£o foi possÃƒÂ­vel preservar a foto neste navegador.');
+      if (!imageSaved) showToast('info', 'A análise foi guardada, mas não foi possível preservar a foto neste navegador.');
       setGuestRemainingAnalyses(getGuestRemainingAnalyses());
     },
     [user, showToast]
@@ -248,7 +248,7 @@ function AppStateProvider({ children }: { children: ReactNode }) {
         await diagnosticoService.atualizarLocalizacao(diagnosticoId, location);
         setHistory((prev) => prev.map((item) => (item.id === diagnosticoId ? { ...item, localizacao: location } : item)));
       } catch {
-        showToast('error', 'NÃƒÂ£o foi possÃƒÂ­vel salvar a localizaÃƒÂ§ÃƒÂ£o da anÃƒÂ¡lise.');
+        showToast('error', 'Não foi possível salvar a localização da análise.');
       }
     },
     [showToast]
@@ -258,14 +258,14 @@ function AppStateProvider({ children }: { children: ReactNode }) {
     async (id: number) => {
       await diagnosticoService.excluir(id);
       setHistory((prev) => prev.filter((item) => item.id !== id));
-      showToast('success', 'AnÃƒÂ¡lise excluÃƒÂ­da');
+      showToast('success', 'Análise excluída');
     },
     [showToast]
   );
 
   const captureCurrentLocation = useCallback(async (): Promise<GeoLocationPoint> => {
     if (!settings.geolocationEnabled) {
-      throw new GeolocationError('Ative a geolocalizaÃƒÂ§ÃƒÂ£o para registrar posiÃƒÂ§ÃƒÂ£o.');
+      throw new GeolocationError('Ative a geolocalização para registrar posição.');
     }
     return captureCurrentLocationUtil();
   }, [settings.geolocationEnabled]);
