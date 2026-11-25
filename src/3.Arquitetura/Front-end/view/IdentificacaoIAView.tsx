@@ -31,7 +31,7 @@ const diagnosticoService = new DiagnosticoService();
 
 export default function IdentificacaoIAView() {
   const navigate = useNavigate();
-  const { pending, resultado, setResultado, setLocation, location, clearFlow, setIsAnalyzing } =
+  const { pending, resultado, setResultado, setImagemResultado, setLocation, location, clearFlow, setIsAnalyzing } =
     useAnalysisFlow();
   const {
     user,
@@ -105,6 +105,7 @@ export default function IdentificacaoIAView() {
 
         setProgress(100);
         setResultado(response);
+        setImagemResultado(pending.preview);
         setLocalResult(response);
 
         if (response.success && response.data) {
@@ -139,6 +140,7 @@ export default function IdentificacaoIAView() {
     pending,
     navigate,
     setResultado,
+    setImagemResultado,
     setLocation,
     user,
     settings.geolocationEnabled,

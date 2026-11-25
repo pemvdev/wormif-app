@@ -19,10 +19,12 @@ export interface PendingImage {
 interface AnalysisFlowContextValue {
   pending: PendingImage | null;
   resultado: DiagnosticoResponseDTO | null;
+  imagemResultado: string | null;
   location: AnalysisHistoryItem['localizacao'] | null;
   isAnalyzing: boolean;
   setPending: (image: PendingImage) => void;
   setResultado: (result: DiagnosticoResponseDTO | null) => void;
+  setImagemResultado: (url: string | null) => void;
   setLocation: (location: AnalysisHistoryItem['localizacao'] | null) => void;
   setIsAnalyzing: (value: boolean) => void;
   clearFlow: () => void;
@@ -33,12 +35,14 @@ const AnalysisFlowContext = createContext<AnalysisFlowContextValue | null>(null)
 export function AnalysisFlowProvider({ children }: { children: ReactNode }) {
   const [pending, setPendingState] = useState<PendingImage | null>(null);
   const [resultado, setResultadoState] = useState<DiagnosticoResponseDTO | null>(null);
+  const [imagemResultado, setImagemResultado] = useState<string | null>(null);
   const [location, setLocationState] = useState<AnalysisHistoryItem['localizacao'] | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const setPending = useCallback((image: PendingImage) => {
     setPendingState(image);
     setResultadoState(null);
+    setImagemResultado(null);
   }, []);
 
   const setResultado = useCallback((result: DiagnosticoResponseDTO | null) => {
@@ -55,6 +59,7 @@ export function AnalysisFlowProvider({ children }: { children: ReactNode }) {
     }
     setPendingState(null);
     setResultadoState(null);
+    setImagemResultado(null);
     setLocationState(null);
     setIsAnalyzing(false);
   }, [pending?.preview]);
@@ -63,15 +68,17 @@ export function AnalysisFlowProvider({ children }: { children: ReactNode }) {
     () => ({
       pending,
       resultado,
+      imagemResultado,
       location,
       isAnalyzing,
       setPending,
       setResultado,
+      setImagemResultado,
       setLocation,
       setIsAnalyzing,
       clearFlow
     }),
-    [pending, resultado, location, isAnalyzing, setPending, setResultado, setLocation, clearFlow]
+    [pending, resultado, imagemResultado, location, isAnalyzing, setPending, setResultado, setImagemResultado, setLocation, clearFlow]
   );
 
   return (

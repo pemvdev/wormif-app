@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { MapPin, Trash2, Bug, Search, Eye, BarChart3, Calendar, Filter, Loader2 } from 'lucide-react';
+import { MapPin, Trash2, Bug, Search, Eye, BarChart3, Calendar, Filter, Loader2, ImageOff } from 'lucide-react';
 import { PageHeader } from '@Front-end/components/layout/PageHeader';
 import { PageContainer } from '@Front-end/components/layout/PageContainer';
 import { PageStatsRow } from '@Front-end/components/layout/PageStatsRow';
@@ -8,6 +8,7 @@ import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { useApp } from '@Front-end/context/AppContext';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { historicoToResultado } from '@Front-end/utils/diagnosticoAdapter';
+import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
 import { estagioDiagnosticoLabels } from '@/3.Arquitetura/Front-end/model/Diagnostico';
 import { Card } from '@Front-end/components/ui/card';
 import { Button } from '@Front-end/components/ui/button';
@@ -25,10 +26,47 @@ import {
   AlertDialogTrigger
 } from '@Front-end/components/ui/alert-dialog';
 
+const diagnosticoService = new DiagnosticoService();
+
+function HistoricoImagem({ diagnosticoId, temImagem }: { diagnosticoId: number; temImagem: boolean }) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!temImagem) return;
+    let active = true;
+    let objectUrl: string | null = null;
+    setFailed(false);
+    void diagnosticoService.buscarImagem(diagnosticoId).then((blob) => {
+      if (!active) return;
+      objectUrl = URL.createObjectURL(blob);
+      setSrc(objectUrl);
+    }).catch(() => {
+      if (active) setFailed(true);
+    });
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [diagnosticoId, temImagem]);
+
+  return (
+    <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-muted flex items-center justify-center sm:h-28 sm:w-28">
+      {src ? (
+        <img src={src} alt="Imagem usada nesta análise" loading="lazy" className="h-full w-full object-cover" />
+      ) : temImagem && !failed ? (
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Carregando imagem" />
+      ) : (
+        <ImageOff className="h-6 w-6 text-muted-foreground" aria-label="Sem imagem salva" />
+      )}
+    </div>
+  );
+}
+
 export default function HistoricoView() {
   const navigate = useNavigate();
   const { history, historyLoading, removeAnalysis, refreshHistory, showToast } = useApp();
-  const { setResultado, setLocation } = useAnalysisFlow();
+  const { setResultado, setImagemResultado, setLocation } = useAnalysisFlow();
   const [query, setQuery] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -97,6 +135,7 @@ export default function HistoricoView() {
         habitat: item.habitat ?? '',
       })
     );
+    setImagemResultado(null);
     setLocation(item.localizacao ?? null);
     navigate('/resultado');
   };
@@ -153,32 +192,35 @@ export default function HistoricoView() {
             <li key={item.id}>
               <Card className="p-5 border-border/80">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <h2 className="text-lg font-semibold italic truncate">{item.especie}</h2>
-                      <Badge variant="secondary">
-                        {estagioDiagnosticoLabels[item.diagnosticoBack]}
-                      </Badge>
-                      {(item.totalRespostas ?? 0) > 0 && <button type="button"
-                        data-testid={`respostas-${item.id}`}
-                        title={`${item.totalRespostas} ${item.totalRespostas === 1 ? 'resposta recebida' : 'respostas recebidas'}`}
-                        aria-label={`${item.totalRespostas} ${item.totalRespostas === 1 ? 'resposta recebida' : 'respostas recebidas'}`}
-                        onClick={() => handleViewDetails(item.id)}
-                        className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold tabular-nums focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2">
-                        {(item.totalRespostas ?? 0) > 99 ? '99+' : item.totalRespostas}
-                      </button>}
-                    </div>
-                    <p className="text-muted-foreground">{item.nomeComum}</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {new Date(item.createdAt).toLocaleString('pt-BR')} · Confiança{' '}
-                      {Math.round(item.nivelConfianca * 100)}%
-                    </p>
-                    {item.localizacao && (
-                      <p className="text-sm text-primary mt-2 inline-flex items-center gap-1">
-                        <MapPin className="w-4 h-4 shrink-0" aria-hidden />
-                        {item.localizacao.label}
+                  <div className="flex min-w-0 flex-1 gap-4">
+                    <HistoricoImagem diagnosticoId={item.id} temImagem={item.temImagem ?? false} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h2 className="text-lg font-semibold italic truncate">{item.especie}</h2>
+                        <Badge variant="secondary">
+                          {estagioDiagnosticoLabels[item.diagnosticoBack]}
+                        </Badge>
+                        {(item.totalRespostas ?? 0) > 0 && <button type="button"
+                          data-testid={`respostas-${item.id}`}
+                          title={`${item.totalRespostas} ${item.totalRespostas === 1 ? 'resposta recebida' : 'respostas recebidas'}`}
+                          aria-label={`${item.totalRespostas} ${item.totalRespostas === 1 ? 'resposta recebida' : 'respostas recebidas'}`}
+                          onClick={() => handleViewDetails(item.id)}
+                          className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-semibold tabular-nums focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2">
+                          {(item.totalRespostas ?? 0) > 99 ? '99+' : item.totalRespostas}
+                        </button>}
+                      </div>
+                      <p className="text-muted-foreground">{item.nomeComum}</p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {new Date(item.createdAt).toLocaleString('pt-BR')} · Confiança{' '}
+                        {Math.round(item.nivelConfianca * 100)}%
                       </p>
-                    )}
+                      {item.localizacao && (
+                        <p className="text-sm text-primary mt-2 inline-flex items-center gap-1">
+                          <MapPin className="w-4 h-4 shrink-0" aria-hidden />
+                          {item.localizacao.label}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-2 shrink-0">

@@ -33,6 +33,7 @@ export function historicoToHistoryItem(dto: DiagnosticoHistoricoDTO): AnalysisHi
     descricao: dto.descricao,
     caracteristicas: dto.caracteristicas,
     habitat: dto.habitat,
+    temImagem: dto.temImagem ?? false,
     totalRespostas: dto.totalRespostas ?? 0,
     localizacao: dto.latitude != null && dto.longitude != null ? { lat: dto.latitude, lng: dto.longitude, label: dto.localizacaoLabel ?? `${dto.latitude}, ${dto.longitude}` } : undefined
   };

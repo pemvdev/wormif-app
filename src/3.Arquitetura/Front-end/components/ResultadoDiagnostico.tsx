@@ -16,12 +16,14 @@ import { estagioDiagnosticoLabels, type EstagioDiagnostico } from '@/3.Arquitetu
 
 interface ResultadoDiagnosticoProps {
   resultado: DiagnosticoResponseDTO | null;
+  imagemUrl?: string | null;
   isLoading: boolean;
   onNovaAnalise: () => void;
 }
 
 export function ResultadoDiagnostico({
   resultado,
+  imagemUrl,
   isLoading,
   onNovaAnalise
 }: ResultadoDiagnosticoProps) {
@@ -75,7 +77,7 @@ export function ResultadoDiagnostico({
   return (
     <div className="space-y-6">
       <Card className="p-6 bg-gradient-to-br from-card to-primary/5 border-primary/20">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col-reverse sm:flex-row items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <Bug className="w-5 h-5 text-primary" />
@@ -98,6 +100,12 @@ export function ResultadoDiagnostico({
             {estagioDiagnosticoLabels[data.diagnosticoBack as EstagioDiagnostico] || data.diagnosticoBack}
           </Badge>
         </div>
+
+        {imagemUrl && (
+          <div className="mt-5 overflow-hidden rounded-xl border border-border/70 bg-muted/30">
+            <img src={imagemUrl} alt="Imagem usada nesta análise" className="mx-auto max-h-80 w-full object-contain" />
+          </div>
+        )}
 
         <div className="mt-6">
           <div className="flex items-center justify-between mb-2">

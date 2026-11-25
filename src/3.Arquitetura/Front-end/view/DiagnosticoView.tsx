@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { MapPin, Download, Share2, History } from 'lucide-react';
+import { BookOpen, ClipboardList, Download, History, Lightbulb, MapPin } from 'lucide-react';
 import { PageHeader } from '@Front-end/components/layout/PageHeader';
 import { PageContainer } from '@Front-end/components/layout/PageContainer';
 import { AnalysisFlowStepper } from '@Front-end/components/layout/AnalysisFlowStepper';
@@ -13,13 +13,35 @@ import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { useApp } from '@Front-end/context/AppContext';
 import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { ANALYSIS_FLOW_MESSAGES } from '@Front-end/utils/analysisFlowNav';
+import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
+import { buildDiagnosticoHtml } from '@Front-end/utils/diagnosticoHtmlExporter';
 import { buildAuthRedirectState } from '@Front-end/utils/authRedirect';
-import { BookOpen, ClipboardList, Lightbulb } from 'lucide-react';
+
+const diagnosticoService = new DiagnosticoService();
 
 export default function DiagnosticoView() {
   const navigate = useNavigate();
-  const { resultado, location, clearFlow } = useAnalysisFlow();
+  const { resultado, imagemResultado, location, clearFlow } = useAnalysisFlow();
   const { user, showToast } = useApp();
+  const [imagemCarregada, setImagemCarregada] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (imagemResultado) {
+      setImagemCarregada(imagemResultado);
+      return;
+    }
+    const id = resultado?.success ? resultado.data?.id : undefined;
+    if (!id) { setImagemCarregada(null); return; }
+    let active = true;
+    let objectUrl: string | null = null;
+    setImagemCarregada(null);
+    void diagnosticoService.buscarImagem(id).then((blob) => {
+      if (!active) return;
+      objectUrl = URL.createObjectURL(blob);
+      setImagemCarregada(objectUrl);
+    }).catch(() => { if (active) setImagemCarregada(null); });
+    return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [resultado, imagemResultado]);
 
   useEffect(() => {
     if (!resultado) {
@@ -33,33 +55,34 @@ export default function DiagnosticoView() {
     navigate('/upload');
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!resultado?.success || !resultado.data) return;
-    const payload = JSON.stringify(resultado.data, null, 2);
-    const blob = new Blob([payload], { type: 'application/json' });
+    const data = resultado.data;
+    let imageDataUrl: string | null = null;
+    if (imagemCarregada || data.id) {
+      try {
+        const imageBlob = imagemCarregada
+          ? await fetch(imagemCarregada).then((response) => response.blob())
+          : await diagnosticoService.buscarImagem(data.id!);
+        imageDataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(imageBlob);
+        });
+      } catch {
+        imageDataUrl = null;
+      }
+    }
+    const html = buildDiagnosticoHtml(data, imageDataUrl, location?.label ?? null);
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wormif-analise-${Date.now()}.json`;
+    a.download = `wormif-analise-${Date.now()}.html`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('success', 'Relatório exportado (JSON).');
-  };
-
-  const handleShare = async () => {
-    if (!resultado?.success || !resultado.data) return;
-    const text = `${resultado.data.nomeComum} (${resultado.data.especie}) — confiança ${Math.round(resultado.data.nivelConfianca * 100)}%`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: 'Wormif — Análise', text });
-        showToast('success', 'Compartilhado.');
-      } else {
-        await navigator.clipboard.writeText(text);
-        showToast('success', 'Resumo copiado para a área de transferência.');
-      }
-    } catch {
-      showToast('info', 'Compartilhamento cancelado.');
-    }
+    showToast('success', 'Análise exportada como HTML.');
   };
 
   if (!resultado) return null;
@@ -108,10 +131,6 @@ export default function DiagnosticoView() {
             <Download className="w-4 h-4 mr-2" />
             Exportar
           </Button>
-          <Button type="button" variant="outline" className="min-h-10" onClick={handleShare}>
-            <Share2 className="w-4 h-4 mr-2" />
-            Compartilhar
-          </Button>
           <Button
             type="button"
             variant="outline"
@@ -138,6 +157,7 @@ export default function DiagnosticoView() {
 
       <ResultadoDiagnostico
         resultado={resultado}
+        imagemUrl={imagemCarregada}
         isLoading={false}
         onNovaAnalise={handleNovaAnalise}
       />

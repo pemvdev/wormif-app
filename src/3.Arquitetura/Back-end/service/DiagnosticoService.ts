@@ -89,6 +89,7 @@ export function toHistoricoDTO(diagnostico: Diagnostico): DiagnosticoHistoricoDT
     descricao: diagnostico.descricao,
     caracteristicas: diagnostico.caracteristicas,
     habitat: diagnostico.habitat,
+    temImagem: Boolean(diagnostico.imagemKey),
     latitude: diagnostico.latitude,
     longitude: diagnostico.longitude,
     localizacaoLabel: diagnostico.localizacaoLabel

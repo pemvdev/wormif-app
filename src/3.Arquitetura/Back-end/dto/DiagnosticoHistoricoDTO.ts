@@ -12,6 +12,7 @@ export interface DiagnosticoHistoricoDTO {
   descricao: string;
   caracteristicas: string[];
   habitat: string;
+  temImagem?: boolean;
   totalRespostas?: number;
   latitude?: number | null;
   longitude?: number | null;
