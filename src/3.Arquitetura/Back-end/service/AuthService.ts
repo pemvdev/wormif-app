@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { Usuario } from '../model/Usuario';
 import { SessaoRepository } from '../repository/SessaoRepository';
 import { UsuarioRepository } from '../repository/UsuarioRepository';
-import { createSalt, hashPassword, verifyPassword } from '../utils/password';
+import { createSalt, hashPassword, verifyPasswordWithUpgrade } from '../utils/password';
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const IMAGE_DATA_URL_PATTERN = /^data:image\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$/;
@@ -116,9 +116,14 @@ export class AuthService {
       return { success: false, error: 'E-mail ou senha inválidos.' };
     }
 
-    const valid = await verifyPassword(dto.senha, usuario.senhaSalt, usuario.senhaHash);
-    if (!valid) {
+    const verification = await verifyPasswordWithUpgrade(dto.senha, usuario.senhaSalt, usuario.senhaHash);
+    if (!verification.valid) {
       return { success: false, error: 'E-mail ou senha inválidos.' };
+    }
+
+    if (verification.needsRehash) {
+      usuario.senhaHash = await hashPassword(dto.senha, usuario.senhaSalt);
+      await this.usuarioRepository.atualizarCredenciais(usuario.id, usuario.senhaHash);
     }
 
     return this.criarSessao(usuario);

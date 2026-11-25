@@ -6,11 +6,20 @@ import { StorageService } from '../service/StorageService';
 import { AnalisesExternasService } from '../service/AnalisesExternasService';
 import { AIService } from '../service/AIService';
 import { AIConfig } from './AIConfig';
+import { AuthService } from '../service/AuthService';
 
 export class ServiceContainer {
+  static createAuthService(env: Env): AuthService {
+    return new AuthService(env.DB);
+  }
+
+  static createStorageService(env: Env): StorageService {
+    return new StorageService(env.R2_BUCKET);
+  }
+
   static createDiagnosticoService(env: Env): DiagnosticoService {
     const repository = new DiagnosticoRepository(env.DB);
-    const storage = new StorageService(env.R2_BUCKET);
+    const storage = this.createStorageService(env);
     return new DiagnosticoService(repository, storage);
   }
 

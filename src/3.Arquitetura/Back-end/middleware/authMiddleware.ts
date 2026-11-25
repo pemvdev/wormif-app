@@ -1,13 +1,13 @@
 import { createMiddleware } from 'hono/factory';
-import { AuthService } from '../service/AuthService';
+import { ServiceContainer } from '../config/ServiceContainer';
 
 export const authMiddleware = createMiddleware<{
   Bindings: Env;
   Variables: {
-    sessao: { token: string; usuarioId: string };
+    sessao?: { token: string; usuarioId: string };
   };
 }>(async (c, next) => {
-  const authService = new AuthService(c.env.DB);
+  const authService = ServiceContainer.createAuthService(c.env);
   const sessao = await authService.resolverSessao(c.req.header('Authorization'));
   if (!sessao) {
     return c.json({ success: false, error: 'Não autenticado' }, 401);

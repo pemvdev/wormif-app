@@ -1,12 +1,14 @@
 import { Hono } from 'hono';
 import type { LoginUsuarioDTO, RegisterUsuarioDTO, UpdatePerfilDTO } from '../dto/AuthDTO';
-import { AuthService } from '../service/AuthService';
+import { authMiddleware } from '../middleware/authMiddleware';
+import { ServiceContainer } from '../config/ServiceContainer';
 
-const authController = new Hono<{ Bindings: Env }>();
+const authController = new Hono<{ Bindings: Env; Variables: { sessao?: { token: string; usuarioId: string } } }>();
+authController.use('/profile', authMiddleware);
 
 authController.put('/profile', async (c) => {
-  const authService = new AuthService(c.env.DB);
-  const sessao = await authService.resolverSessao(c.req.header('Authorization'));
+  const authService = ServiceContainer.createAuthService(c.env);
+  const sessao = c.get('sessao');
   if (!sessao) return c.json({ success: false, error: 'Faça login para editar seu perfil.' }, 401);
   let body: UpdatePerfilDTO;
   try {
@@ -25,7 +27,7 @@ authController.put('/profile', async (c) => {
 authController.post('/register', async (c) => {
   try {
     const body = await c.req.json<RegisterUsuarioDTO>();
-    const authService = new AuthService(c.env.DB);
+    const authService = ServiceContainer.createAuthService(c.env);
     const resultado = await authService.registrar(body);
     return c.json(resultado, resultado.success ? 201 : 400);
   } catch (error) {
@@ -37,7 +39,7 @@ authController.post('/register', async (c) => {
 authController.post('/login', async (c) => {
   try {
     const body = await c.req.json<LoginUsuarioDTO>();
-    const authService = new AuthService(c.env.DB);
+    const authService = ServiceContainer.createAuthService(c.env);
     const resultado = await authService.login(body);
     return c.json(resultado, resultado.success ? 200 : 401);
   } catch (error) {
@@ -48,7 +50,7 @@ authController.post('/login', async (c) => {
 
 authController.post('/logout', async (c) => {
   try {
-    const authService = new AuthService(c.env.DB);
+    const authService = ServiceContainer.createAuthService(c.env);
     const sessao = await authService.resolverSessao(c.req.header('Authorization'));
     if (sessao) {
       await authService.logout(sessao.token);
