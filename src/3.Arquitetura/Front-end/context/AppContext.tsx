@@ -8,8 +8,7 @@ import {
   type ReactNode
 } from 'react';
 import { getAuthToken, setUnauthorizedHandler } from '@Front-end/api/authToken';
-import type { DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico';
-import { AuthService } from '@Front-end/service/AuthService';
+import type { EstagioDiagnostico } from '@/3.Arquitetura/Dominio/EstagioDiagnostico';
 import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
 import {
   canGuestAnalyze,
@@ -19,9 +18,9 @@ import {
   addPendingGuestDiagnosis,
   requeuePendingGuestDiagnosis
 } from '@Front-end/context/guestDiagnosis';
-import { frontDataToRegistrarPayload, historicoToHistoryItem } from '@Front-end/utils/diagnosticoMapper';
+import { frontDataToRegistrarPayload, historicoToHistoryItem } from '@Front-end/utils/diagnosticoAdapter';
 import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
-import type { AuthUsuarioDTO, IntuitoUsoAplicacao } from '@Front-end/dto/AuthDTO';
+import type { IntuitoUsoAplicacao } from '@Front-end/dto/AuthDTO';
 import type { UploadImagemDTO } from '@Front-end/dto/UploadImagemDTO';
 import { readGuestImage, deleteGuestImage } from './guestImages';
 import {
@@ -29,30 +28,17 @@ import {
   GeolocationError,
   type GeoLocationPoint
 } from '@Front-end/utils/geolocation';
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  profissao: string | null;
-  fotoPerfilUrl: string | null;
-  linkedin: string | null;
-  intuitoUso: IntuitoUsoAplicacao | null;
-  permiteAnalisePorTerceiros: boolean;
-}
-
-export type ProfileInput = Omit<User, 'id' | 'profissao' | 'linkedin' | 'intuitoUso'> & {
-  profissao: string;
-  linkedin: string;
-  intuitoUso: IntuitoUsoAplicacao;
-};
+import { SettingsProvider, useSettings, type AppSettings } from './SettingsContext';
+import { ToastProvider, useToast, type ToastMessage } from './ToastContext';
+import { AuthProvider, useAuth, type ProfileInput, type RegisterInput, type User } from './AuthContext';
+export type { ProfileInput, User } from './AuthContext';
 
 export interface AnalysisHistoryItem {
   id: number;
   createdAt: string;
   especie: string;
   nomeComum: string;
-  diagnosticoFront: DiagnosticoFront;
+  diagnosticoBack: EstagioDiagnostico;
   nivelConfianca: number;
   descricao?: string;
   caracteristicas?: string[];
@@ -65,26 +51,8 @@ export interface AnalysisHistoryItem {
   };
 }
 
-export type ThemePreference = 'light' | 'dark' | 'system';
-export type LanguagePreference = 'pt' | 'en' | 'es';
 export type PlanId = 'free' | 'pro' | 'enterprise';
-
-export interface AppSettings {
-  theme: ThemePreference;
-  language: LanguagePreference;
-  geolocationEnabled: boolean;
-  notifications: {
-    email: boolean;
-    analiseConcluida: boolean;
-    promocoes: boolean;
-  };
-}
-
-interface ToastMessage {
-  id: string;
-  type: 'success' | 'error' | 'info';
-  text: string;
-}
+export type { AppSettings, ThemePreference, LanguagePreference } from './SettingsContext';
 
 interface AppContextValue {
   user: User | null;
@@ -130,24 +98,9 @@ interface AppContextValue {
 }
 
 const STORAGE_KEY = 'wormif_app_state_v1';
-const authService = new AuthService();
 const diagnosticoService = new DiagnosticoService();
 
-const defaultSettings: AppSettings = {
-  theme: 'system',
-  language: 'pt',
-  geolocationEnabled: true,
-  notifications: {
-    email: true,
-    analiseConcluida: true,
-    promocoes: false
-  }
-};
-
 interface PersistedState {
-  user: User | null;
-  settings: AppSettings;
-  geoByDiagnosticoId: Record<string, AnalysisHistoryItem['localizacao']>;
   activePlanId?: PlanId;
 }
 
@@ -155,84 +108,41 @@ function loadState(): PersistedState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      return { user: null, settings: defaultSettings, geoByDiagnosticoId: {}, activePlanId: 'free' };
+      return { activePlanId: 'free' };
     }
     const parsed = JSON.parse(raw) as PersistedState & { history?: unknown };
-    const user = parsed.user && getAuthToken() ? parsed.user : null;
     return {
-      user,
-      settings: { ...defaultSettings, ...parsed.settings },
-      geoByDiagnosticoId: parsed.geoByDiagnosticoId ?? {},
       activePlanId: parsed.activePlanId ?? 'free'
     };
   } catch {
-    return { user: null, settings: defaultSettings, geoByDiagnosticoId: {}, activePlanId: 'free' };
+    return { activePlanId: 'free' };
   }
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-function applyTheme(theme: ThemePreference) {
-  const root = document.documentElement;
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const isDark = theme === 'dark' || (theme === 'system' && prefersDark);
-  root.classList.toggle('dark', isDark);
-}
-
-function mapAuthUsuarioToUser(usuario: AuthUsuarioDTO): User {
-  return {
-    id: usuario.id,
-    name: usuario.nome,
-    email: usuario.email,
-    profissao: usuario.profissao,
-    fotoPerfilUrl: usuario.fotoPerfilUrl,
-    linkedin: usuario.linkedin,
-    intuitoUso: usuario.intuitoUso,
-    permiteAnalisePorTerceiros: usuario.permiteAnalisePorTerceiros
-  };
-}
-
-export function AppProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => loadState().user);
-  const [settings, setSettings] = useState<AppSettings>(() => loadState().settings);
-  const [geoByDiagnosticoId, setGeoByDiagnosticoId] = useState<
-    Record<string, AnalysisHistoryItem['localizacao']>
-  >(() => loadState().geoByDiagnosticoId);
+function AppStateProvider({ children }: { children: ReactNode }) {
+  const { user, setUser, login: authenticate, register: createAccount, logout: endSession,
+    updateProfile: saveProfile, changePassword, requestPasswordReset } = useAuth();
+  const { settings, updateSettings } = useSettings();
   const [history, setHistory] = useState<AnalysisHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [activePlanId, setActivePlanId] = useState<PlanId>(() => loadState().activePlanId ?? 'free');
-  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const { toast, showToast, dismissToast } = useToast();
   const [guestRemainingAnalyses, setGuestRemainingAnalyses] = useState(() =>
     user ? GUEST_DIAGNOSIS_LIMIT : getGuestRemainingAnalyses()
   );
 
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ user, settings, geoByDiagnosticoId, activePlanId })
-    );
-  }, [user, settings, geoByDiagnosticoId, activePlanId]);
-
-  useEffect(() => {
-    applyTheme(settings.theme);
-  }, [settings.theme]);
-
-  const showToast = useCallback((type: ToastMessage['type'], text: string) => {
-    const id = crypto.randomUUID();
-    setToast({ id, type, text });
-    window.setTimeout(() => {
-      setToast((current) => (current?.id === id ? null : current));
-    }, 4000);
-  }, []);
-
-  const dismissToast = useCallback(() => setToast(null), []);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ activePlanId }));
+  }, [activePlanId]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
       setUser(null);
       setHistory([]);
       setGuestRemainingAnalyses(getGuestRemainingAnalyses());
-      showToast('info', 'Sessão expirada ou inválida. Faça login novamente.');
+      showToast('info', 'SessÃƒÂ£o expirada ou invÃƒÂ¡lida. FaÃƒÂ§a login novamente.');
     });
     return () => setUnauthorizedHandler(null);
   }, [showToast]);
@@ -250,9 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         );
         synced += 1;
         await deleteGuestImage(item.id).catch(() => undefined);
-        if (item.localizacao) {
-          setGeoByDiagnosticoId((prev) => ({ ...prev, [String(id)]: item.localizacao }));
-        }
+        if (item.localizacao) await diagnosticoService.atualizarLocalizacao(id, item.localizacao);
       } catch {
         requeuePendingGuestDiagnosis(item);
       }
@@ -268,9 +176,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (token !== getAuthToken()) return;
       setHistory(
         items.map((item) => {
-          const mapped = historicoToHistoryItem(item);
-          const localizacao = geoByDiagnosticoId[String(item.id)];
-          return localizacao ? { ...mapped, localizacao } : mapped;
+          return historicoToHistoryItem(item);
         })
       );
     } catch {
@@ -278,7 +184,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       if (!options?.silent) setHistoryLoading(false);
     }
-  }, [geoByDiagnosticoId]);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -289,67 +195,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [user, refreshHistory]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await authService.login(email, password);
-    if (!response.success || !response.data) {
-      return { ok: false, error: response.error ?? 'E-mail ou senha inválidos.' };
-    }
-    setUser(mapAuthUsuarioToUser(response.data.usuario));
+    const response = await authenticate(email, password);
+    if (!response.ok) return response;
     const synced = await syncPendingGuestDiagnoses();
     await refreshHistory();
     setGuestRemainingAnalyses(GUEST_DIAGNOSIS_LIMIT);
     if (synced > 0) {
-      showToast('success', `${synced} análise(s) salva(s) no histórico.`);
+      showToast('success', `${synced} anÃƒÂ¡lise(s) salva(s) no histÃƒÂ³rico.`);
     } else {
       showToast('success', 'Login realizado com sucesso.');
     }
     return { ok: true };
-  }, [showToast, syncPendingGuestDiagnoses, refreshHistory]);
+  }, [authenticate, showToast, syncPendingGuestDiagnoses, refreshHistory]);
 
-  const register = useCallback(
-    async (data: {
-      name: string;
-      email: string;
-      password: string;
-      profissao: string;
-      fotoPerfilUrl?: string | null;
-      linkedin: string;
-      intuitoUso: IntuitoUsoAplicacao;
-      permiteAnalisePorTerceiros: boolean;
-    }) => {
-      const response = await authService.register({
-        nome: data.name,
-        email: data.email,
-        senha: data.password,
-        profissao: data.profissao.trim() || null,
-        fotoPerfilUrl: data.fotoPerfilUrl,
-        linkedin: data.linkedin.trim() || null,
-        intuitoUso: data.intuitoUso,
-        permiteAnalisePorTerceiros: data.permiteAnalisePorTerceiros
-      });
-      if (!response.success || !response.data) {
-        return { ok: false, error: response.error ?? 'Não foi possível cadastrar.' };
-      }
-      setUser(mapAuthUsuarioToUser(response.data.usuario));
-      const synced = await syncPendingGuestDiagnoses();
-      await refreshHistory();
-      setGuestRemainingAnalyses(GUEST_DIAGNOSIS_LIMIT);
-      if (synced > 0) {
-        showToast('success', `Conta criada. ${synced} análise(s) salva(s) no histórico.`);
-      } else {
-        showToast('success', 'Conta criada. Bem-vindo ao Wormif!');
-      }
-      return { ok: true };
-    },
-    [showToast, syncPendingGuestDiagnoses, refreshHistory]
-  );
+  const register = useCallback(async (data: RegisterInput) => {
+    const response = await createAccount(data);
+    if (!response.ok) return response;
+    const synced = await syncPendingGuestDiagnoses();
+    await refreshHistory();
+    setGuestRemainingAnalyses(GUEST_DIAGNOSIS_LIMIT);
+    showToast('success', synced > 0 ? `Conta criada. ${synced} anÃ¡lise(s) salva(s) no histÃ³rico.` : 'Conta criada. Bem-vindo ao Wormif!');
+    return { ok: true };
+  }, [createAccount, showToast, syncPendingGuestDiagnoses, refreshHistory]);
 
   const logout = useCallback(() => {
-    void authService.logout();
-    setUser(null);
+    endSession();
     setHistory([]);
     setGuestRemainingAnalyses(getGuestRemainingAnalyses());
-    showToast('info', 'Sessão encerrada.');
-  }, [showToast]);
+    showToast('info', 'SessÃ£o encerrada.');
+  }, [endSession, showToast]);
 
   const canAnalyze = useCallback(() => {
     if (user) return true;
@@ -360,67 +234,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async (result: DiagnosticoResponseDTO, localizacao?: AnalysisHistoryItem['localizacao'], imagem?: UploadImagemDTO) => {
       if (user) return;
       const imageSaved = await addPendingGuestDiagnosis(result, localizacao, imagem);
-      if (!imageSaved) showToast('info', 'A análise foi guardada, mas não foi possível preservar a foto neste navegador.');
+      if (!imageSaved) showToast('info', 'A anÃƒÂ¡lise foi guardada, mas nÃƒÂ£o foi possÃƒÂ­vel preservar a foto neste navegador.');
       setGuestRemainingAnalyses(getGuestRemainingAnalyses());
     },
     [user, showToast]
   );
 
-  const updateProfile = useCallback(async (data: ProfileInput) => {
-    try {
-      const response = await authService.updateProfile({
-        nome: data.name, email: data.email, profissao: data.profissao.trim() || null,
-        fotoPerfilUrl: data.fotoPerfilUrl, linkedin: data.linkedin.trim() || null,
-        intuitoUso: data.intuitoUso, permiteAnalisePorTerceiros: data.permiteAnalisePorTerceiros
-      });
-      if (!response.success || !response.data) {
-        return { ok: false, error: response.error ?? 'Não foi possível atualizar o perfil.' };
-      }
-      setUser(mapAuthUsuarioToUser(response.data));
-      showToast('success', 'Perfil atualizado.');
-      return { ok: true };
-    } catch {
-      return { ok: false, error: 'Não foi possível salvar. Tente novamente.' };
-    }
-  }, [showToast]);
-
-  const updateSettings = useCallback((patch: Partial<AppSettings>) => {
-    setSettings((prev) => ({
-      ...prev,
-      ...patch,
-      notifications: { ...prev.notifications, ...patch.notifications }
-    }));
-    showToast('success', 'Preferências salvas.');
-  }, [showToast]);
 
   const attachLocationToDiagnostico = useCallback(
-    (diagnosticoId: number, location: AnalysisHistoryItem['localizacao']) => {
+    async (diagnosticoId: number, location: AnalysisHistoryItem['localizacao']) => {
       if (!location) return;
-      setGeoByDiagnosticoId((prev) => ({ ...prev, [String(diagnosticoId)]: location }));
-      setHistory((prev) =>
-        prev.map((item) => (item.id === diagnosticoId ? { ...item, localizacao: location } : item))
-      );
+      try {
+        await diagnosticoService.atualizarLocalizacao(diagnosticoId, location);
+        setHistory((prev) => prev.map((item) => (item.id === diagnosticoId ? { ...item, localizacao: location } : item)));
+      } catch {
+        showToast('error', 'NÃƒÂ£o foi possÃƒÂ­vel salvar a localizaÃƒÂ§ÃƒÂ£o da anÃƒÂ¡lise.');
+      }
     },
-    []
+    [showToast]
   );
 
   const removeAnalysis = useCallback(
     async (id: number) => {
       await diagnosticoService.excluir(id);
       setHistory((prev) => prev.filter((item) => item.id !== id));
-      setGeoByDiagnosticoId((prev) => {
-        const next = { ...prev };
-        delete next[String(id)];
-        return next;
-      });
-      showToast('success', 'Análise excluída');
+      showToast('success', 'AnÃƒÂ¡lise excluÃƒÂ­da');
     },
     [showToast]
   );
 
   const captureCurrentLocation = useCallback(async (): Promise<GeoLocationPoint> => {
     if (!settings.geolocationEnabled) {
-      throw new GeolocationError('Ative a geolocalização para registrar posição.');
+      throw new GeolocationError('Ative a geolocalizaÃƒÂ§ÃƒÂ£o para registrar posiÃƒÂ§ÃƒÂ£o.');
     }
     return captureCurrentLocationUtil();
   }, [settings.geolocationEnabled]);
@@ -429,28 +274,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (planId: PlanId, planName: string) => {
       setActivePlanId(planId);
       showToast('success', `Plano ${planName} ativado com sucesso.`);
-    },
-    [showToast]
-  );
-
-  const changePassword = useCallback((password: string, confirm: string) => {
-    if (password.length < 6) {
-      return { ok: false, error: 'A nova senha deve ter pelo menos 6 caracteres.' };
-    }
-    if (password !== confirm) {
-      return { ok: false, error: 'As senhas não coincidem.' };
-    }
-    showToast('success', 'Senha alterada com sucesso (simulação).');
-    return { ok: true };
-  }, [showToast]);
-
-  const requestPasswordReset = useCallback(
-    (email: string) => {
-      if (!email.includes('@')) {
-        showToast('error', 'Informe um e-mail válido.');
-        return;
-      }
-      showToast('info', `Link de recuperação enviado para ${email} (simulação).`);
     },
     [showToast]
   );
@@ -466,7 +289,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
-      updateProfile,
+      updateProfile: saveProfile,
       updateSettings,
       refreshHistory,
       attachLocationToDiagnostico,
@@ -492,7 +315,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
-      updateProfile,
+      saveProfile,
       updateSettings,
       refreshHistory,
       attachLocationToDiagnostico,
@@ -516,4 +339,8 @@ export function useApp() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;
+}
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  return <ToastProvider><AuthProvider><SettingsProvider><AppStateProvider>{children}</AppStateProvider></SettingsProvider></AuthProvider></ToastProvider>;
 }
