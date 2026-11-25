@@ -31,6 +31,9 @@ export default function LoginView() {
   const [loading, setLoading] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetFeedback, setResetFeedback] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -45,11 +48,15 @@ export default function LoginView() {
     }
   };
 
-  const handleResetSubmit = (e: FormEvent) => {
+  const handleResetSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    requestPasswordReset(resetEmail.trim() || email.trim());
-    setResetOpen(false);
-    setResetEmail('');
+    setResetError(null);
+    setResetFeedback(null);
+    setResetLoading(true);
+    const result = await requestPasswordReset(resetEmail.trim());
+    setResetLoading(false);
+    if (!result.ok) { setResetError(result.error ?? 'Não foi possível enviar o link.'); return; }
+    setResetFeedback('Se o e-mail estiver cadastrado, enviaremos um link para redefinir sua senha. Verifique também a caixa de spam.');
   };
 
   return (
@@ -91,6 +98,8 @@ export default function LoginView() {
                   className="text-sm text-primary font-medium hover:underline"
                   onClick={() => {
                     setResetEmail(email);
+                    setResetError(null);
+                    setResetFeedback(null);
                     setResetOpen(true);
                   }}
                 >
@@ -141,9 +150,7 @@ export default function LoginView() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Recuperar senha</DialogTitle>
-            <DialogDescription>
-              Informe seu e-mail. Enviaremos um link de recuperação (simulação local).
-            </DialogDescription>
+            <DialogDescription>Informe o e-mail da sua conta para receber um link seguro de redefinição de senha.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleResetSubmit}>
             <Field>
@@ -152,16 +159,19 @@ export default function LoginView() {
                 id="reset-email"
                 type="email"
                 required
+                autoComplete="email"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 placeholder="voce@email.com"
               />
+              {resetFeedback && <p role="status" className="mt-3 text-sm text-primary">{resetFeedback}</p>}
+              {resetError && <FieldError>{resetError}</FieldError>}
             </Field>
             <DialogFooter className="mt-4 gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setResetOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setResetOpen(false)} disabled={resetLoading}>
                 Cancelar
               </Button>
-              <Button type="submit">Enviar link</Button>
+              <Button type="submit" disabled={resetLoading || Boolean(resetFeedback)}>{resetLoading ? 'Enviando...' : 'Enviar link'}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

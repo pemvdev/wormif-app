@@ -72,6 +72,7 @@ runSql(path.join(root, 'database/migrations/d1/0008_add_geolocalizacao.sql'), {
 runSql(path.join(root, 'database/migrations/d1/0009_remove_validated_by_specialist.sql'), {
   ignoreMissingColumn: true
 });
+runSql(path.join(root, 'database/migrations/d1/0010_create_password_reset_tokens.sql'));
 if (process.argv.includes('--seed')) {
   runSql(path.join(root, 'database/seeds/d1/usuario-test-data.sql'));
   runSql(path.join(root, 'database/seeds/d1/diagnostico-test-data.sql'));

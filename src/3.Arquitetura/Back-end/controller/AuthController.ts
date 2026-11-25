@@ -1,10 +1,33 @@
 import { Hono } from 'hono';
-import type { LoginUsuarioDTO, RegisterUsuarioDTO, UpdatePerfilDTO } from '../dto/AuthDTO';
+import type { AlterarSenhaDTO, LoginUsuarioDTO, RegisterUsuarioDTO, UpdatePerfilDTO, SolicitarRedefinicaoSenhaDTO, RedefinirSenhaDTO } from '../dto/AuthDTO';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { ServiceContainer } from '../config/ServiceContainer';
 
 const authController = new Hono<{ Bindings: Env; Variables: { sessao?: { token: string; usuarioId: string } } }>();
 authController.use('/profile', authMiddleware);
+authController.use('/password', authMiddleware);
+
+authController.post('/password-reset/request', async (c) => {
+  try {
+    const body = await c.req.json<SolicitarRedefinicaoSenhaDTO>();
+    const result = await ServiceContainer.createAuthService(c.env).solicitarRedefinicaoSenha(body);
+    return c.json(result, result.success ? 200 : 400);
+  } catch (error) {
+    console.error('Erro ao solicitar redefinição de senha:', error);
+    return c.json({ success: false, error: 'Não foi possível solicitar a recuperação. Tente novamente.' }, 500);
+  }
+});
+
+authController.post('/password-reset/confirm', async (c) => {
+  try {
+    const body = await c.req.json<RedefinirSenhaDTO>();
+    const result = await ServiceContainer.createAuthService(c.env).redefinirSenha(body);
+    return c.json(result, result.success ? 200 : 400);
+  } catch (error) {
+    console.error('Erro ao redefinir senha:', error);
+    return c.json({ success: false, error: 'Não foi possível redefinir a senha. Tente novamente.' }, 500);
+  }
+});
 
 authController.put('/profile', async (c) => {
   const authService = ServiceContainer.createAuthService(c.env);
@@ -21,6 +44,24 @@ authController.put('/profile', async (c) => {
     return c.json(resultado, resultado.success ? 200 : 400);
   } catch {
     return c.json({ success: false, error: 'Não foi possível atualizar o perfil.' }, 500);
+  }
+});
+
+authController.put('/password', async (c) => {
+  const sessao = c.get('sessao');
+  if (!sessao) return c.json({ success: false, error: 'Faça login para alterar sua senha.' }, 401);
+  let body: AlterarSenhaDTO;
+  try {
+    body = await c.req.json<AlterarSenhaDTO>();
+  } catch {
+    return c.json({ success: false, error: 'Dados inválidos.' }, 400);
+  }
+  try {
+    const resultado = await ServiceContainer.createAuthService(c.env).alterarSenha(sessao.usuarioId, body);
+    return c.json(resultado, resultado.success ? 200 : 400);
+  } catch (error) {
+    console.error('Erro ao alterar senha:', error);
+    return c.json({ success: false, error: 'Não foi possível alterar a senha.' }, 500);
   }
 });
 

@@ -22,6 +22,8 @@ Crie `.dev.vars` na raiz (não versionado):
 OPENAI_API_KEY=...
 ```
 
+Para habilitar a recuperação de senha, configure `RESEND_API_KEY`, `EMAIL_FROM` com um remetente verificado no Resend, e `APP_URL` com a origem da aplicação. Em produção, cadastre esses valores como secrets/vars do Worker; mantenha a chave do Resend secreta. Os links expiram em uma hora e podem ser usados uma única vez.
+
 Pode partir de `.dev.vars.example`. A chave deve corresponder ao fornecedor configurado no código.
 
 ### Primeira execução (banco local)

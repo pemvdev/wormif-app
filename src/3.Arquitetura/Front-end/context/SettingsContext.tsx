@@ -2,16 +2,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useToast } from './ToastContext';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
-export type LanguagePreference = 'pt' | 'en' | 'es';
 export interface AppSettings {
   theme: ThemePreference;
-  language: LanguagePreference;
   geolocationEnabled: boolean;
-  notifications: { email: boolean; analiseConcluida: boolean; promocoes: boolean };
 }
 export const defaultSettings: AppSettings = {
-  theme: 'system', language: 'pt', geolocationEnabled: true,
-  notifications: { email: true, analiseConcluida: true, promocoes: false }
+  theme: 'system', geolocationEnabled: true
 };
 interface SettingsContextValue {
   settings: AppSettings;
@@ -25,7 +21,14 @@ function loadSettings(): AppSettings {
   try {
     const stored = localStorage.getItem(SETTINGS_KEY) ?? localStorage.getItem(LEGACY_KEY);
     const parsed = stored ? JSON.parse(stored) as { settings?: Partial<AppSettings> } : {};
-    return { ...defaultSettings, ...parsed.settings, notifications: { ...defaultSettings.notifications, ...parsed.settings?.notifications } };
+    const saved = parsed.settings;
+    const theme = saved?.theme;
+    return {
+      theme: theme === 'light' || theme === 'dark' || theme === 'system' ? theme : defaultSettings.theme,
+      geolocationEnabled: typeof saved?.geolocationEnabled === 'boolean'
+        ? saved.geolocationEnabled
+        : defaultSettings.geolocationEnabled
+    };
   } catch { return defaultSettings; }
 }
 
@@ -40,7 +43,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }, [settings]);
   useEffect(() => { applyTheme(settings.theme); }, [settings.theme]);
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
-    setSettings((previous) => ({ ...previous, ...patch, notifications: { ...previous.notifications, ...patch.notifications } }));
+    setSettings((previous) => ({ ...previous, ...patch }));
     showToast('success', 'Preferências salvas.');
   }, [showToast]);
   const value = useMemo(() => ({ settings, updateSettings }), [settings, updateSettings]);

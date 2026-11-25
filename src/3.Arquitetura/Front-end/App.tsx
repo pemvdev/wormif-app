@@ -15,12 +15,14 @@ import ConfiguracoesView from '@Front-end/view/ConfiguracoesView';
 import GeolocalizacaoView from '@Front-end/view/GeolocalizacaoView';
 import PlanosView from '@Front-end/view/PlanosView';
 import AnalisesExternasView from '@Front-end/view/AnalisesExternasView';
+import RedefinirSenhaView from '@Front-end/view/RedefinirSenhaView';
 
 export default function App() {
   return (
     <AppProvider>
       <Router>
         <Routes>
+          <Route path="/redefinir-senha" element={<RedefinirSenhaView />} />
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<LoginView />} />
             <Route path="/cadastro" element={<CadastroView />} />

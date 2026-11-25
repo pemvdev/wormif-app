@@ -36,9 +36,11 @@ export default function PerfilView() {
   const [photoLoading, setPhotoLoading] = useState(false);
   const [photoInputKey, setPhotoInputKey] = useState(0);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const initials = name
     .split(' ')
@@ -77,16 +79,22 @@ export default function PerfilView() {
     }
   };
 
-  const handlePasswordSubmit = (e: FormEvent) => {
+  const handlePasswordSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
-    const result = changePassword(newPassword, confirmPassword);
-    if (result.ok) {
+    setSavingPassword(true);
+    try {
+      const result = await changePassword(currentPassword, newPassword, confirmPassword);
+      if (!result.ok) {
+        setPasswordError(result.error ?? 'Não foi possível alterar a senha.');
+        return;
+      }
       setPasswordOpen(false);
+      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } else {
-      setPasswordError(result.error ?? 'Não foi possível alterar a senha.');
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -229,16 +237,28 @@ export default function PerfilView() {
           <DialogHeader>
             <DialogTitle>Alterar senha</DialogTitle>
             <DialogDescription>
-              Defina uma nova senha com pelo menos 6 caracteres (simulação local).
+              Confirme sua senha atual e escolha uma nova senha com pelo menos 6 caracteres.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handlePasswordSubmit}>
             <FieldGroup>
               <Field>
+                <FieldLabel htmlFor="current-password-profile">Senha atual</FieldLabel>
+                <Input
+                  id="current-password-profile"
+                  type="password"
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                />
+              </Field>
+              <Field>
                 <FieldLabel htmlFor="new-password">Nova senha</FieldLabel>
                 <Input
                   id="new-password"
                   type="password"
+                  autoComplete="new-password"
                   minLength={6}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -250,6 +270,7 @@ export default function PerfilView() {
                 <Input
                   id="confirm-password"
                   type="password"
+                  autoComplete="new-password"
                   minLength={6}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -259,10 +280,12 @@ export default function PerfilView() {
               {passwordError && <FieldError>{passwordError}</FieldError>}
             </FieldGroup>
             <DialogFooter className="mt-4 gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setPasswordOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setPasswordOpen(false)} disabled={savingPassword}>
                 Cancelar
               </Button>
-              <Button type="submit">Salvar senha</Button>
+              <Button type="submit" disabled={savingPassword}>
+                {savingPassword ? 'Salvando...' : 'Salvar senha'}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -275,12 +298,12 @@ export default function PerfilView() {
           {
             icon: Mail,
             title: 'E-mail de acesso',
-            description: 'Usado para login e, no futuro, recuperação de senha e alertas de análise concluída.'
+            description: 'Usado para acessar sua conta.'
           },
           {
             icon: Shield,
             title: 'Senha',
-            description: 'Altere periodicamente. Neste protótipo a troca é apenas simulada no navegador.'
+            description: 'A alteração exige a senha atual e a confirmação da nova senha.'
           },
           {
             icon: User,

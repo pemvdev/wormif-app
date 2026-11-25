@@ -74,4 +74,9 @@ export class Usuario {
   atualizarSenhaHash(senhaHash: string): void {
     this.#senhaHash = senhaHash;
   }
+
+  alterarCredenciais(senhaSalt: string, senhaHash: string): void {
+    this.#senhaSalt = senhaSalt;
+    this.#senhaHash = senhaHash;
+  }
 }

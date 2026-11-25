@@ -7,10 +7,14 @@ import { AnalisesExternasService } from '../service/AnalisesExternasService';
 import { AIService } from '../service/AIService';
 import { AIConfig } from './AIConfig';
 import { AuthService } from '../service/AuthService';
+import { ResendEmailSender } from '../adapter/ResendEmailSender';
 
 export class ServiceContainer {
   static createAuthService(env: Env): AuthService {
-    return new AuthService(env.DB);
+    const emailSender = env.RESEND_API_KEY && env.EMAIL_FROM
+      ? new ResendEmailSender(env.RESEND_API_KEY, env.EMAIL_FROM)
+      : null;
+    return new AuthService(env.DB, env.APP_URL, emailSender);
   }
 
   static createStorageService(env: Env): StorageService {

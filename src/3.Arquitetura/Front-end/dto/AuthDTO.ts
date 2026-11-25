@@ -16,6 +16,14 @@ export interface PerfilResponseDTO {
   error?: string;
 }
 
+export interface OperacaoAuthDTO {
+  success: boolean;
+  error?: string;
+}
+
+export interface SolicitarRedefinicaoSenhaDTO { email: string; }
+export interface RedefinirSenhaDTO { token: string; novaSenha: string; confirmacaoNovaSenha: string; }
+
 export interface AuthUsuarioDTO {
   id: string;
   nome: string;

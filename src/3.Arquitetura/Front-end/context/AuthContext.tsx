@@ -29,8 +29,9 @@ interface AuthContextValue {
   register: (data: RegisterInput) => Promise<AuthResult>;
   logout: () => void;
   updateProfile: (data: ProfileInput) => Promise<AuthResult>;
-  changePassword: (password: string, confirm: string) => { ok: boolean; error?: string };
-  requestPasswordReset: (email: string) => void;
+  changePassword: (currentPassword: string, newPassword: string, confirmation: string) => Promise<AuthResult>;
+  requestPasswordReset: (email: string) => Promise<AuthResult>;
+  resetPassword: (token: string, password: string, confirmation: string) => Promise<AuthResult>;
 }
 const AUTH_STATE_KEY = 'wormif_auth_user_v1';
 const LEGACY_STATE_KEY = 'wormif_app_state_v1';
@@ -89,18 +90,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     } catch { return { ok: false, error: 'Não foi possível salvar. Tente novamente.' }; }
   }, [showToast]);
-  const changePassword = useCallback((password: string, confirm: string) => {
-    if (password.length < 6) return { ok: false, error: 'A nova senha deve ter pelo menos 6 caracteres.' };
-    if (password !== confirm) return { ok: false, error: 'As senhas não coincidem.' };
-    showToast('success', 'Senha alterada com sucesso (simulação).');
-    return { ok: true };
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string, confirmation: string): Promise<AuthResult> => {
+    try {
+      const response = await authService.changePassword(currentPassword, newPassword, confirmation);
+      if (!response.success) return { ok: false, error: response.error ?? 'Não foi possível alterar a senha.' };
+      showToast('success', 'Senha alterada com sucesso.');
+      return { ok: true };
+    } catch {
+      return { ok: false, error: 'Não foi possível alterar a senha. Tente novamente.' };
+    }
   }, [showToast]);
-  const requestPasswordReset = useCallback((email: string) => {
-    if (!email.includes('@')) { showToast('error', 'Informe um e-mail válido.'); return; }
-    showToast('info', `Link de recuperação enviado para ${email} (simulação).`);
-  }, [showToast]);
-  const value = useMemo(() => ({ user, setUser, login, register, logout, updateProfile, changePassword, requestPasswordReset }),
-    [user, login, register, logout, updateProfile, changePassword, requestPasswordReset]);
+  const requestPasswordReset = useCallback(async (email: string): Promise<AuthResult> => {
+    try {
+      const response = await authService.requestPasswordReset(email);
+      return response.success ? { ok: true } : { ok: false, error: response.error ?? 'Não foi possível enviar o link.' };
+    } catch { return { ok: false, error: 'Não foi possível solicitar a recuperação. Tente novamente.' }; }
+  }, []);
+  const resetPassword = useCallback(async (token: string, password: string, confirmation: string): Promise<AuthResult> => {
+    try {
+      const response = await authService.resetPassword({ token, novaSenha: password, confirmacaoNovaSenha: confirmation });
+      if (!response.success) return { ok: false, error: response.error ?? 'Não foi possível redefinir a senha.' };
+      setUser(null);
+      void authService.logout();
+      return { ok: true };
+    } catch { return { ok: false, error: 'Não foi possível redefinir a senha. Tente novamente.' }; }
+  }, []);
+  const value = useMemo(() => ({ user, setUser, login, register, logout, updateProfile, changePassword, requestPasswordReset, resetPassword }),
+    [user, login, register, logout, updateProfile, changePassword, requestPasswordReset, resetPassword]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -43,6 +43,7 @@ export interface AnalysisHistoryItem {
   descricao?: string;
   caracteristicas?: string[];
   habitat?: string;
+  temImagem?: boolean;
   totalRespostas?: number;
   localizacao?: {
     lat: number;
@@ -52,7 +53,7 @@ export interface AnalysisHistoryItem {
 }
 
 export type PlanId = 'free' | 'pro' | 'enterprise';
-export type { AppSettings, ThemePreference, LanguagePreference } from './SettingsContext';
+export type { AppSettings, ThemePreference } from './SettingsContext';
 
 interface AppContextValue {
   user: User | null;
@@ -93,8 +94,9 @@ interface AppContextValue {
   captureCurrentLocation: () => Promise<GeoLocationPoint>;
   activePlanId: PlanId;
   subscribePlan: (planId: PlanId, planName: string) => void;
-  changePassword: (password: string, confirm: string) => { ok: boolean; error?: string };
-  requestPasswordReset: (email: string) => void;
+  changePassword: (currentPassword: string, newPassword: string, confirmation: string) => Promise<{ ok: boolean; error?: string }>;
+  requestPasswordReset: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  resetPassword: (token: string, password: string, confirmation: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const STORAGE_KEY = 'wormif_app_state_v1';
@@ -123,7 +125,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 function AppStateProvider({ children }: { children: ReactNode }) {
   const { user, setUser, login: authenticate, register: createAccount, logout: endSession,
-    updateProfile: saveProfile, changePassword, requestPasswordReset } = useAuth();
+    updateProfile: saveProfile, changePassword, requestPasswordReset, resetPassword } = useAuth();
   const { settings, updateSettings } = useSettings();
   const [history, setHistory] = useState<AnalysisHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -303,7 +305,8 @@ function AppStateProvider({ children }: { children: ReactNode }) {
       captureCurrentLocation,
       subscribePlan,
       changePassword,
-      requestPasswordReset
+      requestPasswordReset,
+      resetPassword
     }),
     [
       user,
@@ -328,7 +331,8 @@ function AppStateProvider({ children }: { children: ReactNode }) {
       captureCurrentLocation,
       subscribePlan,
       changePassword,
-      requestPasswordReset
+      requestPasswordReset,
+      resetPassword
     ]
   );
 

@@ -20,6 +20,13 @@ export const sessoes = sqliteTable('sessoes', {
   expiresAt: text('expires_at').notNull(),
 });
 
+export const tokensRedefinicaoSenha = sqliteTable('tokens_redefinicao_senha', {
+  tokenHash: text('token_hash').primaryKey(),
+  usuarioId: text('usuario_id').notNull(),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
 export const diagnosticos = sqliteTable('diagnosticos', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   diagnosticDate: text('diagnostic_date').notNull(),

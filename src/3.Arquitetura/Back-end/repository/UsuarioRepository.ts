@@ -50,8 +50,8 @@ export class UsuarioRepository {
     return row ? this.mapRow(row) : null;
   }
 
-  async atualizarCredenciais(id: string, senhaHash: string): Promise<void> {
-    await this.db.update(usuarios).set({ senhaHash }).where(eq(usuarios.id, id)).run();
+  async atualizarCredenciais(id: string, senhaHash: string, senhaSalt: string): Promise<void> {
+    await this.db.update(usuarios).set({ senhaHash, senhaSalt }).where(eq(usuarios.id, id)).run();
   }
 
   private mapRow(row: typeof usuarios.$inferSelect): Usuario {

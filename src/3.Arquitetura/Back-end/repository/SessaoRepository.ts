@@ -22,6 +22,10 @@ export class SessaoRepository {
     await this.db.delete(sessoes).where(eq(sessoes.token, token));
   }
 
+  async excluirDoUsuario(usuarioId: string): Promise<void> {
+    await this.db.delete(sessoes).where(eq(sessoes.usuarioId, usuarioId)).run();
+  }
+
   async excluirExpiradas(): Promise<void> {
     await this.db.delete(sessoes).where(lt(sessoes.expiresAt, sql`strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`));
   }
