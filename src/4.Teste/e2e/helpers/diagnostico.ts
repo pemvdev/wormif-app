@@ -25,7 +25,6 @@ const mockHistoricoItems = [
     descricao: 'Lagarta com listras longitudinais.',
     caracteristicas: ['Máculas dorsais', 'Alto potencial de dano'],
     habitat: 'Culturas de milho e sorgo.',
-    validadoPorEspecialista: false
   },
   {
     id: 2,
@@ -38,7 +37,6 @@ const mockHistoricoItems = [
     descricao: 'Besouro adulto de coloração verde.',
     caracteristicas: ['Élitros com manchas'],
     habitat: 'Pastagens e culturas de verão.',
-    validadoPorEspecialista: false
   }
 ];
 

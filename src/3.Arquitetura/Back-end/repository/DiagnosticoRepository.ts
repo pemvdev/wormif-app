@@ -16,7 +16,7 @@ export const EXTERNAL_ACCESS_FROM = `
 
 type DiagnosticoRow = {
   id: number; diagnostic_date: string; status: StatusDiagnostico; confidence_level: number;
-  life_stage: EstagioDiagnostico; validated_by_specialist: number; species: string; common_name: string;
+  life_stage: EstagioDiagnostico; species: string; common_name: string;
   description: string; characteristics_json: string; habitat: string; user_id: string | null; imagem_key: string | null;
   latitude: number | null; longitude: number | null; localizacao_label: string | null;
 };
@@ -40,7 +40,7 @@ export class DiagnosticoRepository {
   async listarExternas(userId: string, query: string, limit: number, offset: number) {
     const rows = await this.db.all<AnaliseExternaRow>(sql`
       SELECT d.id, d.diagnostic_date, d.status, d.confidence_level, d.life_stage,
-        d.validated_by_specialist, d.species, d.common_name, d.description,
+        d.species, d.common_name, d.description,
         d.characteristics_json, d.habitat, d.user_id, d.imagem_key, d.latitude, d.longitude, d.localizacao_label, autor.nome AS autor_nome
       FROM diagnosticos d
       JOIN usuarios autor ON autor.id = d.user_id
@@ -57,7 +57,7 @@ export class DiagnosticoRepository {
   async buscarExterna(id: number, userId: string) {
     const row = await this.db.get<AnaliseExternaRow>(sql`
       SELECT d.id, d.diagnostic_date, d.status, d.confidence_level, d.life_stage,
-        d.validated_by_specialist, d.species, d.common_name, d.description,
+        d.species, d.common_name, d.description,
         d.characteristics_json, d.habitat, d.user_id, d.imagem_key, d.latitude, d.longitude, d.localizacao_label, autor.nome AS autor_nome
       FROM diagnosticos d
       JOIN usuarios autor ON autor.id = d.user_id
@@ -76,7 +76,6 @@ export class DiagnosticoRepository {
       status: diagnostico.status,
       confidenceLevel: diagnostico.nivelConfianca,
       lifeStage: diagnostico.diagnosticoBack,
-      validatedBySpecialist: diagnostico.validadoPorEspecialista ? 1 : 0,
       species: diagnostico.especie,
       commonName: diagnostico.nomeComum,
       description: diagnostico.descricao,
@@ -92,8 +91,23 @@ export class DiagnosticoRepository {
       updatedAt: new Date().toISOString(),
     }).run();
     if (!result.success) throw new Error('Falha ao salvar diagnostico no banco de dados');
-    diagnostico.id = result.meta.last_row_id;
-    return diagnostico;
+    return new Diagnostico(
+      result.meta.last_row_id,
+      diagnostico.data,
+      diagnostico.status,
+      diagnostico.nivelConfianca,
+      diagnostico.diagnosticoBack,
+      diagnostico.especie,
+      diagnostico.nomeComum,
+      diagnostico.descricao,
+      diagnostico.caracteristicas,
+      diagnostico.habitat,
+      diagnostico.userId,
+      diagnostico.imagemKey,
+      diagnostico.latitude,
+      diagnostico.longitude,
+      diagnostico.localizacaoLabel
+    );
   }
 
   async listarPorUsuario(userId: string) {
@@ -103,7 +117,6 @@ export class DiagnosticoRepository {
       status: diagnosticos.status,
       confidenceLevel: diagnosticos.confidenceLevel,
       lifeStage: diagnosticos.lifeStage,
-      validatedBySpecialist: diagnosticos.validatedBySpecialist,
       species: diagnosticos.species,
       commonName: diagnosticos.commonName,
       description: diagnosticos.description,
@@ -118,7 +131,7 @@ export class DiagnosticoRepository {
     }).from(diagnosticos).where(eq(diagnosticos.userId, userId)).orderBy(desc(diagnosticos.diagnosticDate), desc(diagnosticos.id)).all();
     return rows.map((row) => ({ diagnostico: this.mapRow({
       id: row.id, diagnostic_date: row.diagnosticDate, status: row.status as StatusDiagnostico, confidence_level: row.confidenceLevel,
-      life_stage: row.lifeStage as EstagioDiagnostico, validated_by_specialist: row.validatedBySpecialist, species: row.species,
+      life_stage: row.lifeStage as EstagioDiagnostico, species: row.species,
       common_name: row.commonName, description: row.description, characteristics_json: row.characteristicsJson,
       habitat: row.habitat, user_id: row.userId, imagem_key: row.imagemKey,
       latitude: row.latitude, longitude: row.longitude, localizacao_label: row.localizacaoLabel,
@@ -130,7 +143,7 @@ export class DiagnosticoRepository {
     if (!row) return null;
     return this.mapRow({
       id: row.id, diagnostic_date: row.diagnosticDate, status: row.status as StatusDiagnostico, confidence_level: row.confidenceLevel,
-      life_stage: row.lifeStage as EstagioDiagnostico, validated_by_specialist: row.validatedBySpecialist, species: row.species,
+      life_stage: row.lifeStage as EstagioDiagnostico, species: row.species,
       common_name: row.commonName, description: row.description, characteristics_json: row.characteristicsJson,
       habitat: row.habitat, user_id: row.userId, imagem_key: row.imagemKey,
       latitude: row.latitude, longitude: row.longitude, localizacao_label: row.localizacaoLabel,
@@ -149,6 +162,6 @@ export class DiagnosticoRepository {
   }
 
   private mapRow(row: DiagnosticoRow): Diagnostico {
-    return new Diagnostico(row.id, row.diagnostic_date, row.status, row.confidence_level, row.life_stage, row.validated_by_specialist === 1, row.species, row.common_name, row.description, parseCharacteristics(row.characteristics_json), row.habitat, row.user_id, row.imagem_key, row.latitude, row.longitude, row.localizacao_label);
+    return new Diagnostico(row.id, row.diagnostic_date, row.status, row.confidence_level, row.life_stage, row.species, row.common_name, row.description, parseCharacteristics(row.characteristics_json), row.habitat, row.user_id, row.imagem_key, row.latitude, row.longitude, row.localizacao_label);
   }
 }

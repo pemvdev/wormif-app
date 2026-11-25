@@ -26,7 +26,6 @@ export const diagnosticos = sqliteTable('diagnosticos', {
   status: text('status').notNull(),
   confidenceLevel: real('confidence_level').notNull(),
   lifeStage: text('life_stage').notNull(),
-  validatedBySpecialist: integer('validated_by_specialist').notNull().default(0),
   species: text('species').notNull(),
   commonName: text('common_name').notNull(),
   description: text('description').notNull(),

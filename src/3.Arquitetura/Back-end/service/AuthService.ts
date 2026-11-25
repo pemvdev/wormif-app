@@ -104,7 +104,7 @@ export class AuthService {
     if (existing && existing.id !== usuarioId) {
       return { success: false, error: 'E-mail já cadastrado.' };
     }
-    Object.assign(usuario, perfil.data);
+    usuario.atualizarPerfil(perfil.data);
     const atualizado = await this.usuarioRepository.atualizarPerfil(usuario);
     if (!atualizado) return { success: false, error: 'E-mail já cadastrado.' };
     return { success: true, data: this.toAuthUsuarioDTO(usuario) };
@@ -122,8 +122,9 @@ export class AuthService {
     }
 
     if (verification.needsRehash) {
-      usuario.senhaHash = await hashPassword(dto.senha, usuario.senhaSalt);
-      await this.usuarioRepository.atualizarCredenciais(usuario.id, usuario.senhaHash);
+      const senhaHash = await hashPassword(dto.senha, usuario.senhaSalt);
+      usuario.atualizarSenhaHash(senhaHash);
+      await this.usuarioRepository.atualizarCredenciais(usuario.id, senhaHash);
     }
 
     return this.criarSessao(usuario);

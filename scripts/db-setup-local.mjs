@@ -7,7 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const databaseId = '019db345-a173-7000-8161-d7633937a443';
 const wranglerCli = path.join(root, 'node_modules/wrangler/bin/wrangler.js');
 
-function runCommand(args, { ignoreDuplicateColumn = false } = {}) {
+function runCommand(args, { ignoreDuplicateColumn = false, ignoreMissingColumn = false } = {}) {
   try {
     const output = execFileSync(process.execPath, args, {
       cwd: root,
@@ -21,6 +21,9 @@ function runCommand(args, { ignoreDuplicateColumn = false } = {}) {
     if (ignoreDuplicateColumn && /duplicate column name:/i.test(`${stdout}\n${stderr}`)) {
       return;
     }
+    if (ignoreMissingColumn && /no such column:/i.test(`${stdout}\n${stderr}`)) {
+      return;
+    }
 
     process.stdout.write(stdout);
     process.stderr.write(stderr);
@@ -28,21 +31,21 @@ function runCommand(args, { ignoreDuplicateColumn = false } = {}) {
   }
 }
 
-function runSql(file, { ignoreDuplicateColumn = false } = {}) {
+function runSql(file, { ignoreDuplicateColumn = false, ignoreMissingColumn = false } = {}) {
   const relativeFile = path.relative(root, file).replaceAll('\\', '/');
   const baseArgs = [wranglerCli, 'd1', 'execute', databaseId, '--local'];
   if (process.env.WORMIF_TEST_STATE_PATH) {
     baseArgs.push('--persist-to', process.env.WORMIF_TEST_STATE_PATH);
   }
 
-  if (ignoreDuplicateColumn) {
+  if (ignoreDuplicateColumn || ignoreMissingColumn) {
     const statements = readFileSync(file, 'utf8')
       .split(';')
       .map((statement) => statement.replace(/^\s*--.*$/gm, '').trim())
       .filter(Boolean);
 
     for (const statement of statements) {
-      runCommand([...baseArgs, '--command', statement], { ignoreDuplicateColumn: true });
+      runCommand([...baseArgs, '--command', statement], { ignoreDuplicateColumn, ignoreMissingColumn });
     }
     return;
   }
@@ -65,6 +68,9 @@ runSql(path.join(root, 'database/migrations/d1/0006_create_palpites.sql'));
 runSql(path.join(root, 'database/migrations/d1/0007_create_discussao_analises.sql'));
 runSql(path.join(root, 'database/migrations/d1/0008_add_geolocalizacao.sql'), {
   ignoreDuplicateColumn: true
+});
+runSql(path.join(root, 'database/migrations/d1/0009_remove_validated_by_specialist.sql'), {
+  ignoreMissingColumn: true
 });
 if (process.argv.includes('--seed')) {
   runSql(path.join(root, 'database/seeds/d1/usuario-test-data.sql'));

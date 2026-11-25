@@ -92,7 +92,6 @@ test('consentimento, acesso de colaboradores e isolamento de propriedade', async
   expect(saved.data.palpites).toHaveLength(1);
   expect(saved.data.meuPalpite).toMatchObject({ ...palpite, comentario: 'Palpite editado.', autorNome: reviewer.profile.nome });
   expect(saved.data.diagnosticoBack).toBe('larva');
-  expect(saved.data.validadoPorEspecialista).toBe(false);
   const received = await request.get(`/api/diagnostico/${sharedId}/palpites`, { headers: author.headers });
   expect(received.status()).toBe(200);
   expect((await received.json()).data).toHaveLength(1);

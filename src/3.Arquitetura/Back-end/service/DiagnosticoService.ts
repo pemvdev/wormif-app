@@ -23,7 +23,6 @@ export class DiagnosticoService {
       'processando',
       data.nivelConfianca,
       data.diagnosticoBack,
-      false,
       data.especie,
       data.nomeComum,
       data.descricao,
@@ -34,7 +33,7 @@ export class DiagnosticoService {
     diagnostico.processar();
     if (imagem) {
       if (!this.storageService) throw new Error('Armazenamento de imagens não configurado');
-      diagnostico.imagemKey = await this.storageService.salvarImagem(imagem);
+      diagnostico.associarImagem(await this.storageService.salvarImagem(imagem));
     }
     try {
       return await this.diagnosticoRepository.salvar(diagnostico);
@@ -90,7 +89,6 @@ export function toHistoricoDTO(diagnostico: Diagnostico): DiagnosticoHistoricoDT
     descricao: diagnostico.descricao,
     caracteristicas: diagnostico.caracteristicas,
     habitat: diagnostico.habitat,
-    validadoPorEspecialista: diagnostico.validadoPorEspecialista,
     latitude: diagnostico.latitude,
     longitude: diagnostico.longitude,
     localizacaoLabel: diagnostico.localizacaoLabel

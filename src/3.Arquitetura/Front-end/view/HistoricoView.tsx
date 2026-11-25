@@ -95,7 +95,6 @@ export default function HistoricoView() {
         descricao: item.descricao ?? '',
         caracteristicas: item.caracteristicas ?? [],
         habitat: item.habitat ?? '',
-        validadoPorEspecialista: false
       })
     );
     setLocation(item.localizacao ?? null);

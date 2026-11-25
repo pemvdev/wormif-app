@@ -13,7 +13,6 @@ export interface Diagnostico {
   descricao: string;
   caracteristicas: string[];
   habitat: string;
-  validadoPorEspecialista: boolean;
 }
 
 export const estagioDiagnosticoLabels: Record<EstagioDiagnostico, string> = {

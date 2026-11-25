@@ -1,0 +1,66 @@
+@startuml CasoDeUsoFazerDiagnostico
+title Caso de uso: Fazer diagnóstico\nArquitetura do backend
+
+left to right direction
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Cliente HTTP" as Cliente
+
+package "Cloudflare Worker · Hono" {
+  component "DiagnosticoController\nPOST /api/diagnostico/analisar" as Controller
+  component "ServiceContainer" as Container
+  component "AuthService\nresolverSessao()" as Auth
+  component "StorageService\nparsearUpload()\nsalvarImagem()" as Storage
+  component "AIService\nanalisarImagem()" as AI
+  component "DiagnosticoService\nregistrar()" as DiagnosticoService
+  component "DiagnosticoRepository\nDrizzle ORM" as DiagnosticoRepository
+  component "FileValidator" as FileValidator
+  component "Modelo de domínio\nDiagnostico" as Diagnostico
+  component "EstagioDiagnostico\n(domínio compartilhado)" as Estagio
+}
+
+cloud "OpenAI API" as OpenAI
+cloud "Cloudflare R2\nImagens" as R2
+database "Cloudflare D1\nDiagnósticos" as D1
+
+Cliente --> Controller : POST com imagem Base64\ne Authorization opcional
+
+Controller --> Container : solicita serviços
+Container ..> Auth : cria
+Container ..> Storage : cria
+Container ..> AI : cria
+Container ..> DiagnosticoService : cria
+Container ..> DiagnosticoRepository : cria
+
+Controller --> Auth : resolve sessão, se enviada
+Controller --> Storage : lê e valida upload
+Storage --> FileValidator : valida formato e conteúdo
+Controller --> AI : solicita análise
+AI --> OpenAI : envia instrução e imagem
+AI ..> Estagio : normaliza estágio retornado
+AI --> Controller : DiagnosticoResponseDTO
+
+Controller --> DiagnosticoService : registra se análise OK\ne usuário autenticado
+DiagnosticoService --> Diagnostico : cria e conclui entidade
+DiagnosticoService --> Storage : salva imagem
+Storage --> R2 : grava imagem
+DiagnosticoService --> DiagnosticoRepository : persiste diagnóstico
+DiagnosticoRepository ..> Diagnostico : mapeia entidade/registro
+DiagnosticoRepository --> D1 : INSERT via Drizzle
+
+Controller --> Cliente : resultado; inclui ID se persistido
+
+note bottom of Controller
+  Visitante: recebe o resultado da IA sem persistência no servidor.
+  Autenticado: após análise bem-sucedida, imagem vai para R2
+  e os dados do diagnóstico vão para D1.
+end note
+
+note bottom of DiagnosticoService
+  Se o INSERT falhar depois do upload, o serviço tenta
+  excluir do R2 a imagem recém-gravada.
+end note
+
+@enduml
