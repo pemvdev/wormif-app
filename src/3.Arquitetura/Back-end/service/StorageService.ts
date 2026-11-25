@@ -1,6 +1,8 @@
 import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
 import { validateUploadImagem } from '../utils/FileValidator';
 
+declare const Buffer: { from(value: string, encoding: 'base64'): Uint8Array };
+
 export type StorageValidationResult =
   | { ok: true }
   | { ok: false; error: string };

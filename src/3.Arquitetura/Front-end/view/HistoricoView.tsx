@@ -7,8 +7,8 @@ import { PageStatsRow } from '@Front-end/components/layout/PageStatsRow';
 import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { useApp } from '@Front-end/context/AppContext';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
-import { historicoToResultado } from '@Front-end/utils/diagnosticoMapper';
-import { diagnosticoFrontLabels } from '@/3.Arquitetura/Front-end/model/Diagnostico';
+import { historicoToResultado } from '@Front-end/utils/diagnosticoAdapter';
+import { estagioDiagnosticoLabels } from '@/3.Arquitetura/Front-end/model/Diagnostico';
 import { Card } from '@Front-end/components/ui/card';
 import { Button } from '@Front-end/components/ui/button';
 import { Input } from '@Front-end/components/ui/input';
@@ -63,7 +63,7 @@ export default function HistoricoView() {
     return (
       item.especie.toLowerCase().includes(q) ||
       item.nomeComum.toLowerCase().includes(q) ||
-      diagnosticoFrontLabels[item.diagnosticoFront].toLowerCase().includes(q)
+      estagioDiagnosticoLabels[item.diagnosticoBack].toLowerCase().includes(q)
     );
   });
 
@@ -89,7 +89,7 @@ export default function HistoricoView() {
         data: item.createdAt,
         status: 'concluido',
         nivelConfianca: item.nivelConfianca,
-        diagnosticoBack: item.diagnosticoFront,
+        diagnosticoBack: item.diagnosticoBack,
         especie: item.especie,
         nomeComum: item.nomeComum,
         descricao: item.descricao ?? '',
@@ -158,7 +158,7 @@ export default function HistoricoView() {
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <h2 className="text-lg font-semibold italic truncate">{item.especie}</h2>
                       <Badge variant="secondary">
-                        {diagnosticoFrontLabels[item.diagnosticoFront]}
+                        {estagioDiagnosticoLabels[item.diagnosticoBack]}
                       </Badge>
                       {(item.totalRespostas ?? 0) > 0 && <button type="button"
                         data-testid={`respostas-${item.id}`}

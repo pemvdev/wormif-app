@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { ChevronDown, ChevronRight, MessageSquareReply, RefreshCw, Send, X } from 'lucide-react';
 import type { ComentarioDiscussaoDTO } from '@Front-end/dto/PalpiteDTO';
-import { diagnosticoFrontLabels } from '@Front-end/model/Diagnostico';
+import { estagioDiagnosticoLabels } from '@Front-end/model/Diagnostico';
 import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
 import { PerfilPublicoDialog } from './PerfilPublicoDialog';
 import { Button } from './ui/button';
@@ -128,7 +128,7 @@ export function PalpitesList({ analiseId }: { analiseId: number }) {
         <time className="text-xs text-muted-foreground" dateTime={item.atualizadoEm}>{new Date(item.atualizadoEm).toLocaleString('pt-BR')}</time>
       </div>
       {item.parentId && <p className="text-xs text-muted-foreground mt-2">Em resposta a {commentsById.get(item.parentId)?.autor.nome}</p>}
-      {item.especie && item.estagio && <p className="mt-2"><span className="italic">{item.especie}</span> · {diagnosticoFrontLabels[item.estagio]}</p>}
+      {item.especie && item.estagio && <p className="mt-2"><span className="italic">{item.especie}</span> · {estagioDiagnosticoLabels[item.estagio]}</p>}
       {item.comentario && <p className="whitespace-pre-wrap mt-2">{item.comentario}</p>}
       <div className="flex gap-2 mt-2">
         <Button variant="ghost" size="sm" onClick={() => setReplyTo(item.id)}><MessageSquareReply className="size-4 mr-2" aria-hidden />Responder</Button>

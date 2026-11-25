@@ -12,7 +12,7 @@ import { Badge } from '@Front-end/components/ui/badge';
 import { Progress } from '@Front-end/components/ui/progress';
 import { Button } from '@Front-end/components/ui/button';
 import type { DiagnosticoResponseDTO } from '@/3.Arquitetura/Front-end/dto/DiagnosticoResponseDTO';
-import { diagnosticoFrontLabels, type DiagnosticoFront } from '@/3.Arquitetura/Front-end/model/Diagnostico';
+import { estagioDiagnosticoLabels, type EstagioDiagnostico } from '@/3.Arquitetura/Front-end/model/Diagnostico';
 
 interface ResultadoDiagnosticoProps {
   resultado: DiagnosticoResponseDTO | null;
@@ -92,10 +92,10 @@ export function ResultadoDiagnostico({
           </div>
           
           <Badge 
-            variant={data.diagnosticoFront === 'desconhecido' ? 'secondary' : 'default'}
+            variant={data.diagnosticoBack === 'desconhecido' ? 'secondary' : 'default'}
             className="text-sm px-4 py-2 bg-secondary text-secondary-foreground"
           >
-            {diagnosticoFrontLabels[data.diagnosticoFront as DiagnosticoFront] || data.diagnosticoFront}
+            {estagioDiagnosticoLabels[data.diagnosticoBack as EstagioDiagnostico] || data.diagnosticoBack}
           </Badge>
         </div>
 

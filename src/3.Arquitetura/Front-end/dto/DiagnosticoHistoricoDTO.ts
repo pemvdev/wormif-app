@@ -1,11 +1,12 @@
-import type { DiagnosticoFront, StatusDiagnostico } from '../model/Diagnostico';
+import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+import type { StatusDiagnostico } from '../model/Diagnostico';
 
 export interface DiagnosticoHistoricoDTO {
   id: number;
   data: string;
   status: StatusDiagnostico;
   nivelConfianca: number;
-  diagnosticoBack: DiagnosticoFront;
+  diagnosticoBack: EstagioDiagnostico;
   especie: string;
   nomeComum: string;
   descricao: string;
@@ -13,4 +14,7 @@ export interface DiagnosticoHistoricoDTO {
   habitat: string;
   validadoPorEspecialista: boolean;
   totalRespostas?: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  localizacaoLabel?: string | null;
 }

@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import type { AIConfig } from '../config/AIConfig';
 import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
-import type { DiagnosticoBack } from '../model/Diagnostico';
+import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
 
 const UNKNOWN_SPECIES = new Set(
   [
@@ -147,8 +147,8 @@ function asNonEmptyString(value: unknown): string {
   return value.trim();
 }
 
-function normalizeEstagio(raw: unknown): DiagnosticoBack {
-  const valid: DiagnosticoBack[] = [
+function normalizeEstagio(raw: unknown): EstagioDiagnostico {
+  const valid: EstagioDiagnostico[] = [
     'ovo',
     'larva',
     'ninfa',
@@ -163,7 +163,7 @@ function normalizeEstagio(raw: unknown): DiagnosticoBack {
     .toLowerCase()
     .normalize('NFD')
     .replace(/\p{M}/gu, '');
-  return valid.includes(s as DiagnosticoBack) ? (s as DiagnosticoBack) : 'desconhecido';
+  return valid.includes(s as EstagioDiagnostico) ? (s as EstagioDiagnostico) : 'desconhecido';
 }
 
 export class AIService {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { DiagnosticoBack } from '../model/Diagnostico';
+import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
 
 export const palpiteSchema = z.object({
   especie: z.string().trim().min(1, 'Informe a espécie do seu palpite.').max(200, 'Use até 200 caracteres para a espécie.'),
@@ -31,7 +31,7 @@ export interface ComentarioDiscussaoDTO {
   autorNome: string;
   autor: PerfilPublicoDTO;
   especie: string | null;
-  estagio: DiagnosticoBack | null;
+  estagio: EstagioDiagnostico | null;
   comentario: string;
   criadoEm: string;
   atualizadoEm: string;
@@ -40,7 +40,7 @@ export interface ComentarioDiscussaoDTO {
 export interface PalpiteDTO extends ComentarioDiscussaoDTO {
   parentId: null;
   especie: string;
-  estagio: DiagnosticoBack;
+  estagio: EstagioDiagnostico;
 }
 
 export interface DiscussaoPaginaDTO {

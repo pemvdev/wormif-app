@@ -21,7 +21,6 @@ import { Button } from '@Front-end/components/ui/button';
 import { useAnalysisFlow } from '@Front-end/context/AnalysisFlowContext';
 import { useApp } from '@Front-end/context/AppContext';
 import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
-import { mapApiResponseToFront } from '@Front-end/utils/diagnosticoMapper';
 import { PageInfoGrid } from '@Front-end/components/layout/PageInfoGrid';
 import { ANALYSIS_FLOW_MESSAGES } from '@Front-end/utils/analysisFlowNav';
 import { geolocationErrorMessage } from '@Front-end/utils/geolocation';
@@ -98,11 +97,11 @@ export default function IdentificacaoIAView() {
         setStatusText('Identificando espécie e estágio de vida...');
         setProgress(68);
 
-        const response = mapApiResponseToFront(await diagnosticoService.analisar(
+        const response = await diagnosticoService.analisar(
           pending.base64,
           pending.mimeType,
           pending.fileName
-        ));
+        );
 
         setProgress(100);
         setResultado(response);

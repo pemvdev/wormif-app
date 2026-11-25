@@ -1,7 +1,8 @@
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { diagnosticos } from '../db/schema';
-import { Diagnostico, type DiagnosticoBack, type StatusDiagnostico } from '../model/Diagnostico';
+import { Diagnostico, type StatusDiagnostico } from '../model/Diagnostico';
+import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
 
 export const EXTERNAL_ACCESS_FROM = `
   FROM diagnosticos d
@@ -15,7 +16,7 @@ export const EXTERNAL_ACCESS_FROM = `
 
 type DiagnosticoRow = {
   id: number; diagnostic_date: string; status: StatusDiagnostico; confidence_level: number;
-  life_stage: DiagnosticoBack; validated_by_specialist: number; species: string; common_name: string;
+  life_stage: EstagioDiagnostico; validated_by_specialist: number; species: string; common_name: string;
   description: string; characteristics_json: string; habitat: string; user_id: string | null; imagem_key: string | null;
   latitude: number | null; longitude: number | null; localizacao_label: string | null;
 };
@@ -32,9 +33,7 @@ function parseCharacteristics(value: string): string[] {
 
 export class DiagnosticoRepository {
   private readonly db;
-  private readonly database: D1Database;
   constructor(database: D1Database) {
-    this.database = database;
     this.db = drizzle(database);
   }
 
@@ -118,8 +117,8 @@ export class DiagnosticoRepository {
       totalRespostas: sql<number>`(SELECT COUNT(*) FROM diagnostico_discussao resposta WHERE resposta.diagnostico_id = ${diagnosticos.id} AND resposta.usuario_id <> ${diagnosticos.userId})`,
     }).from(diagnosticos).where(eq(diagnosticos.userId, userId)).orderBy(desc(diagnosticos.diagnosticDate), desc(diagnosticos.id)).all();
     return rows.map((row) => ({ diagnostico: this.mapRow({
-      id: row.id, diagnostic_date: row.diagnosticDate, status: row.status, confidence_level: row.confidenceLevel,
-      life_stage: row.lifeStage, validated_by_specialist: row.validatedBySpecialist, species: row.species,
+      id: row.id, diagnostic_date: row.diagnosticDate, status: row.status as StatusDiagnostico, confidence_level: row.confidenceLevel,
+      life_stage: row.lifeStage as EstagioDiagnostico, validated_by_specialist: row.validatedBySpecialist, species: row.species,
       common_name: row.commonName, description: row.description, characteristics_json: row.characteristicsJson,
       habitat: row.habitat, user_id: row.userId, imagem_key: row.imagemKey,
       latitude: row.latitude, longitude: row.longitude, localizacao_label: row.localizacaoLabel,
@@ -130,8 +129,8 @@ export class DiagnosticoRepository {
     const row = await this.db.select().from(diagnosticos).where(and(eq(diagnosticos.id, id), eq(diagnosticos.userId, userId))).get();
     if (!row) return null;
     return this.mapRow({
-      id: row.id, diagnostic_date: row.diagnosticDate, status: row.status, confidence_level: row.confidenceLevel,
-      life_stage: row.lifeStage, validated_by_specialist: row.validatedBySpecialist, species: row.species,
+      id: row.id, diagnostic_date: row.diagnosticDate, status: row.status as StatusDiagnostico, confidence_level: row.confidenceLevel,
+      life_stage: row.lifeStage as EstagioDiagnostico, validated_by_specialist: row.validatedBySpecialist, species: row.species,
       common_name: row.commonName, description: row.description, characteristics_json: row.characteristicsJson,
       habitat: row.habitat, user_id: row.userId, imagem_key: row.imagemKey,
       latitude: row.latitude, longitude: row.longitude, localizacao_label: row.localizacaoLabel,
@@ -140,6 +139,12 @@ export class DiagnosticoRepository {
 
   async excluir(id: number, userId: string): Promise<boolean> {
     const result = await this.db.delete(diagnosticos).where(and(eq(diagnosticos.id, id), eq(diagnosticos.userId, userId))).run();
+    return (result.meta?.changes ?? 0) > 0;
+  }
+
+  async atualizarLocalizacao(id: number, userId: string, latitude: number, longitude: number, label: string): Promise<boolean> {
+    const result = await this.db.update(diagnosticos).set({ latitude, longitude, localizacaoLabel: label, updatedAt: new Date().toISOString() })
+      .where(and(eq(diagnosticos.id, id), eq(diagnosticos.userId, userId))).run();
     return (result.meta?.changes ?? 0) > 0;
   }
 

@@ -54,6 +54,10 @@ export class DiagnosticoService {
     return diagnostico ? toHistoricoDTO(diagnostico) : null;
   }
 
+  async atualizarLocalizacao(id: number, userId: string, latitude: number, longitude: number, label: string): Promise<boolean> {
+    return this.diagnosticoRepository.atualizarLocalizacao(id, userId, latitude, longitude, label);
+  }
+
   async obterImagem(id: number, userId: string): Promise<{ body: ReadableStream; contentType: string } | null> {
     const own = await this.diagnosticoRepository.buscarPorId(id, userId);
     const external = own ? null : await this.diagnosticoRepository.buscarExterna(id, userId);
@@ -86,6 +90,9 @@ export function toHistoricoDTO(diagnostico: Diagnostico): DiagnosticoHistoricoDT
     descricao: diagnostico.descricao,
     caracteristicas: diagnostico.caracteristicas,
     habitat: diagnostico.habitat,
-    validadoPorEspecialista: diagnostico.validadoPorEspecialista
+    validadoPorEspecialista: diagnostico.validadoPorEspecialista,
+    latitude: diagnostico.latitude,
+    longitude: diagnostico.longitude,
+    localizacaoLabel: diagnostico.localizacaoLabel
   };
 }

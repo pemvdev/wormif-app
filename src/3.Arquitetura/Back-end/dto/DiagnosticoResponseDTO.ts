@@ -1,11 +1,11 @@
-import type { DiagnosticoBack } from '../model/Diagnostico';
+import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
 
 export interface DiagnosticoResponseDTO {
   success: boolean;
   data?: {
     especie: string;
     nomeComum: string;
-    diagnosticoBack: DiagnosticoBack;
+    diagnosticoBack: EstagioDiagnostico;
     nivelConfianca: number;
     descricao: string;
     caracteristicas: string[];

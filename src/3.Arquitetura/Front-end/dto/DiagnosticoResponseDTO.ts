@@ -1,4 +1,4 @@
-import type { DiagnosticoFront } from '../model/Diagnostico';
+import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
 
 export interface DiagnosticoResponseDTO {
   success: boolean;
@@ -6,7 +6,7 @@ export interface DiagnosticoResponseDTO {
     id?: number;
     especie: string;
     nomeComum: string;
-    diagnosticoFront: DiagnosticoFront;
+    diagnosticoBack: EstagioDiagnostico;
     nivelConfianca: number;
     descricao: string;
     caracteristicas: string[];

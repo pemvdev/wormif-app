@@ -1,5 +1,5 @@
 import { ApiClient } from '../api/ApiClient';
-import type { RegistrarDiagnosticoPayload } from '../utils/diagnosticoMapper';
+import type { RegistrarDiagnosticoPayload } from '../utils/diagnosticoAdapter';
 import type { UploadImagemDTO } from '../dto/UploadImagemDTO';
 import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
 import type { DiagnosticoHistoricoDTO } from '../dto/DiagnosticoHistoricoDTO';
@@ -116,6 +116,11 @@ export class DiagnosticoService {
     if (!response.success) {
       throw new Error(response.error ?? 'Falha ao excluir diagnóstico');
     }
+  }
+
+  async atualizarLocalizacao(id: number, location: { lat: number; lng: number; label: string }): Promise<void> {
+    const response = await this.apiClient.put<{ success: boolean; error?: string }>(`/diagnostico/${id}/localizacao`, location);
+    if (!response.success) throw new Error(response.error ?? 'Falha ao salvar localização');
   }
 
   async registrar(data: RegistrarDiagnosticoPayload & { imagem?: UploadImagemDTO }): Promise<number> {

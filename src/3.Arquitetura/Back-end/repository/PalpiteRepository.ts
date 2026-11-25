@@ -1,5 +1,5 @@
 import type { ComentarioDiscussaoDTO, PalpiteDTO, SalvarPalpiteDTO, SalvarRespostaDTO } from '../dto/PalpiteDTO';
-import type { DiagnosticoBack } from '../model/Diagnostico';
+import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
 import { drizzle } from 'drizzle-orm/d1';
 import { sql } from 'drizzle-orm';
 
@@ -13,7 +13,7 @@ type ComentarioRow = {
   foto_perfil_url: string | null;
   linkedin: string | null;
   especie: string | null;
-  estagio: DiagnosticoBack | null;
+  estagio: EstagioDiagnostico | null;
   comentario: string;
   criado_em: string;
   atualizado_em: string;
@@ -35,13 +35,9 @@ function isPalpite(item: ComentarioDiscussaoDTO): item is PalpiteDTO {
   return item.parentId === null && item.especie !== null && item.estagio !== null;
 }
 
-import { drizzle } from 'drizzle-orm/d1';
-
 export class PalpiteRepository {
   private readonly db;
-  private readonly database: D1Database;
   constructor(database: D1Database) {
-    this.database = database;
     this.db = drizzle(database);
   }
 

@@ -1,34 +1,12 @@
-import type { DiagnosticoFront } from '../model/Diagnostico';
+import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
 import type { DiagnosticoResponseDTO } from '../dto/DiagnosticoResponseDTO';
 import type { DiagnosticoHistoricoDTO } from '../dto/DiagnosticoHistoricoDTO';
 import type { AnalysisHistoryItem } from '../context/AppContext';
 
-type ApiDiagnosticoData = NonNullable<DiagnosticoResponseDTO['data']> & {
-  diagnosticoBack?: DiagnosticoFront;
-};
-
-export function mapApiResponseToFront(response: DiagnosticoResponseDTO): DiagnosticoResponseDTO {
-  if (!response.success || !response.data) {
-    return response;
-  }
-
-  const data = response.data as ApiDiagnosticoData;
-  const diagnosticoFront = data.diagnosticoFront ?? data.diagnosticoBack ?? 'desconhecido';
-  const { diagnosticoBack: _ignored, ...rest } = data;
-
-  return {
-    success: true,
-    data: {
-      ...rest,
-      diagnosticoFront
-    }
-  };
-}
-
 export type RegistrarDiagnosticoPayload = {
   especie: string;
   nomeComum: string;
-  diagnosticoBack: DiagnosticoFront;
+  diagnosticoBack: EstagioDiagnostico;
   nivelConfianca: number;
   descricao: string;
   caracteristicas: string[];
@@ -40,10 +18,8 @@ export type RegistrarDiagnosticoPayload = {
 export function frontDataToRegistrarPayload(
   data: NonNullable<DiagnosticoResponseDTO['data']>
 ): RegistrarDiagnosticoPayload {
-  const extended = data as ApiDiagnosticoData;
-  const diagnosticoBack = extended.diagnosticoBack ?? extended.diagnosticoFront ?? 'desconhecido';
-  const { diagnosticoFront: _front, diagnosticoBack: _back, id: _id, ...rest } = extended;
-  return { ...rest, diagnosticoBack };
+  const { id: _id, ...payload } = data;
+  return payload;
 }
 
 export function historicoToHistoryItem(dto: DiagnosticoHistoricoDTO): AnalysisHistoryItem {
@@ -52,12 +28,13 @@ export function historicoToHistoryItem(dto: DiagnosticoHistoricoDTO): AnalysisHi
     createdAt: dto.data,
     especie: dto.especie,
     nomeComum: dto.nomeComum,
-    diagnosticoFront: dto.diagnosticoBack,
+    diagnosticoBack: dto.diagnosticoBack,
     nivelConfianca: dto.nivelConfianca,
     descricao: dto.descricao,
     caracteristicas: dto.caracteristicas,
     habitat: dto.habitat,
-    totalRespostas: dto.totalRespostas ?? 0
+    totalRespostas: dto.totalRespostas ?? 0,
+    localizacao: dto.latitude != null && dto.longitude != null ? { lat: dto.latitude, lng: dto.longitude, label: dto.localizacaoLabel ?? `${dto.latitude}, ${dto.longitude}` } : undefined
   };
 }
 
@@ -68,7 +45,7 @@ export function historicoToResultado(dto: DiagnosticoHistoricoDTO): DiagnosticoR
       id: dto.id,
       especie: dto.especie,
       nomeComum: dto.nomeComum,
-      diagnosticoFront: dto.diagnosticoBack,
+      diagnosticoBack: dto.diagnosticoBack,
       nivelConfianca: dto.nivelConfianca,
       descricao: dto.descricao,
       caracteristicas: dto.caracteristicas,

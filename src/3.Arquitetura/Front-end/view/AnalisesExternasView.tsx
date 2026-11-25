@@ -12,7 +12,7 @@ import type { AnaliseExternaDetalhesDTO, AnalisesExternasPaginaDTO } from '@Fron
 import { AnaliseImagem } from '@Front-end/components/AnaliseImagem';
 import { PalpiteForm } from '@Front-end/components/PalpiteForm';
 import { PalpitesList } from '@Front-end/components/PalpitesList';
-import { diagnosticoFrontLabels } from '@Front-end/model/Diagnostico';
+import { estagioDiagnosticoLabels } from '@Front-end/model/Diagnostico';
 
 const service = new DiagnosticoService();
 
@@ -85,7 +85,7 @@ function ExternalList() {
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-base font-semibold italic break-words">{item.especie}</h2>
-              <Badge variant="secondary">{diagnosticoFrontLabels[item.diagnosticoBack]}</Badge>
+              <Badge variant="secondary">{estagioDiagnosticoLabels[item.diagnosticoBack]}</Badge>
             </div>
             <p className="text-sm break-words">{item.nomeComum}</p>
             <p className="text-sm text-muted-foreground break-words">Autor: {item.autorNome}</p>
@@ -141,7 +141,7 @@ function ExternalDetails({ id }: { id: string }) {
         <h2 className="text-base font-semibold">Resultado da IA</h2>
         <h2 className="text-xl font-semibold italic">{data.especie}</h2>
         <p>{data.nomeComum}</p>
-        <Badge variant="secondary">{diagnosticoFrontLabels[data.diagnosticoBack]}</Badge>
+        <Badge variant="secondary">{estagioDiagnosticoLabels[data.diagnosticoBack]}</Badge>
         <dl className="grid gap-4 sm:grid-cols-3 text-sm">
           <div><dt className="text-muted-foreground">Autor</dt><dd>{data.autorNome}</dd></div>
           <div><dt className="text-muted-foreground">Data</dt><dd>{new Date(data.data).toLocaleString('pt-BR')}</dd></div>

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Save } from 'lucide-react';
 import type { AnaliseExternaDetalhesDTO } from '@Front-end/dto/AnaliseExternaDTO';
-import { diagnosticoFrontLabels, type DiagnosticoFront } from '@Front-end/model/Diagnostico';
+import { estagioDiagnosticoLabels, type EstagioDiagnostico } from '@Front-end/model/Diagnostico';
 import { DiagnosticoService } from '@Front-end/service/DiagnosticoService';
 import { Field, FieldLabel, FieldError, FieldGroup } from '@Front-end/components/ui/field';
 import { Input } from '@Front-end/components/ui/input';
@@ -10,8 +10,8 @@ import { useApp } from '@Front-end/context/AppContext';
 
 const service = new DiagnosticoService();
 
-function isStage(value: string): value is DiagnosticoFront {
-  return Object.prototype.hasOwnProperty.call(diagnosticoFrontLabels, value);
+function isStage(value: string): value is EstagioDiagnostico {
+  return Object.prototype.hasOwnProperty.call(estagioDiagnosticoLabels, value);
 }
 
 export function PalpiteForm({ data, onSaved }: { data: AnaliseExternaDetalhesDTO; onSaved: () => void }) {
@@ -50,7 +50,7 @@ export function PalpiteForm({ data, onSaved }: { data: AnaliseExternaDetalhesDTO
           <select id="palpite-estagio" value={estagio} onChange={(event) => {
             if (isStage(event.target.value)) setEstagio(event.target.value);
           }} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            {Object.entries(diagnosticoFrontLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            {Object.entries(estagioDiagnosticoLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </Field>
         <Field><FieldLabel htmlFor="palpite-comentario">Comentário (opcional)</FieldLabel>

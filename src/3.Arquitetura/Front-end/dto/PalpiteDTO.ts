@@ -1,8 +1,8 @@
-import type { DiagnosticoFront } from '../model/Diagnostico';
+import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
 
 export interface SalvarPalpiteDTO {
   especie: string;
-  estagio: DiagnosticoFront;
+  estagio: EstagioDiagnostico;
   comentario: string;
 }
 
@@ -21,7 +21,7 @@ export interface ComentarioDiscussaoDTO {
   autorNome: string;
   autor: PerfilPublicoDTO;
   especie: string | null;
-  estagio: DiagnosticoFront | null;
+  estagio: EstagioDiagnostico | null;
   comentario: string;
   criadoEm: string;
   atualizadoEm: string;
@@ -30,7 +30,7 @@ export interface ComentarioDiscussaoDTO {
 export interface PalpiteDTO extends ComentarioDiscussaoDTO {
   parentId: null;
   especie: string;
-  estagio: DiagnosticoFront;
+  estagio: EstagioDiagnostico;
 }
 
 export interface DiscussaoPaginaDTO {

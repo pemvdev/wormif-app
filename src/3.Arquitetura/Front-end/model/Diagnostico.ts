@@ -1,21 +1,13 @@
+import type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+export type { EstagioDiagnostico } from '../../Dominio/EstagioDiagnostico';
+
 export type StatusDiagnostico = 'processando' | 'concluido' | 'erro';
-
-export type DiagnosticoFront =
-  | 'ovo'
-  | 'larva'
-  | 'ninfa'
-  | 'pupa'
-  | 'juvenil'
-  | 'subadulto'
-  | 'adulto'
-  | 'desconhecido';
-
 export interface Diagnostico {
   id: number;
   data: string;
   status: StatusDiagnostico;
   nivelConfianca: number;
-  diagnosticoFront: DiagnosticoFront;
+  diagnosticoBack: EstagioDiagnostico;
   especie: string;
   nomeComum: string;
   descricao: string;
@@ -24,7 +16,7 @@ export interface Diagnostico {
   validadoPorEspecialista: boolean;
 }
 
-export const diagnosticoFrontLabels: Record<DiagnosticoFront, string> = {
+export const estagioDiagnosticoLabels: Record<EstagioDiagnostico, string> = {
   ovo: 'Ovo',
   larva: 'Larva',
   ninfa: 'Ninfa',
