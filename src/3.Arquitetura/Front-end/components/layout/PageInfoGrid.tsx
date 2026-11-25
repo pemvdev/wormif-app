@@ -47,11 +47,9 @@ export function PageInfoGrid({
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                 <Icon className="w-5 h-5 text-primary" aria-hidden />
               </span>
-              <div className="min-w-0">
-                <h3 className="font-medium text-foreground">{itemTitle}</h3>
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{description}</p>
-              </div>
+              <h3 className="min-w-0 font-medium text-foreground leading-snug">{itemTitle}</h3>
             </div>
+            <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{description}</p>
           </Card>
         ))}
       </div>
