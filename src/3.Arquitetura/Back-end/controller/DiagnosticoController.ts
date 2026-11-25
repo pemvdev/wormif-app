@@ -112,15 +112,11 @@ diagnosticoController.get('/:id/imagem', async (c) => {
   const id = parseIdParam(c.req.param('id'));
   if (!id) return c.json({ success: false, error: 'ID inválido' }, 400);
   try {
-    const repository = new DiagnosticoRepository(c.env.DB);
-    const own = await repository.buscarPorId(id, sessao.usuarioId);
-    const external = own ? null : await repository.buscarExterna(id, sessao.usuarioId);
-    const key = own?.imagemKey ?? external?.diagnostico.imagemKey;
-    if (!key) return c.json({ success: false, error: 'Imagem não disponível.' }, 404);
-    const image = await c.env.R2_BUCKET.get(key);
+    const service = new DiagnosticoService(new DiagnosticoRepository(c.env.DB), new StorageService(c.env.R2_BUCKET));
+    const image = await service.obterImagem(id, sessao.usuarioId);
     if (!image) return c.json({ success: false, error: 'Imagem não disponível.' }, 404);
     return new Response(image.body, { headers: {
-      'Content-Type': image.httpMetadata?.contentType ?? 'application/octet-stream',
+      'Content-Type': image.contentType,
       'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff'
     } });
   } catch {
@@ -211,14 +207,11 @@ diagnosticoController.delete('/:id', async (c) => {
 
   try {
     const repository = new DiagnosticoRepository(c.env.DB);
-    const existing = await repository.buscarPorId(id, sessao.usuarioId);
-    const diagnosticoService = new DiagnosticoService(repository);
+    const storageService = new StorageService(c.env.R2_BUCKET);
+    const diagnosticoService = new DiagnosticoService(repository, storageService);
     const removed = await diagnosticoService.excluir(id, sessao.usuarioId);
     if (!removed) {
       return c.json({ success: false, error: 'Diagnóstico não encontrado' }, 404);
-    }
-    if (existing?.imagemKey) {
-      c.executionCtx.waitUntil(c.env.R2_BUCKET.delete(existing.imagemKey));
     }
     return c.json({ success: true });
   } catch (error) {

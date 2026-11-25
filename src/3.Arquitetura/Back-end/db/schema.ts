@@ -35,6 +35,9 @@ export const diagnosticos = sqliteTable('diagnosticos', {
   source: text('source').notNull().default('application'),
   userId: text('user_id'),
   imagemKey: text('imagem_key'),
+  latitude: real('latitude'),
+  longitude: real('longitude'),
+  localizacaoLabel: text('localizacao_label'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

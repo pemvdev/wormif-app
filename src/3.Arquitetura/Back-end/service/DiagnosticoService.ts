@@ -54,8 +54,23 @@ export class DiagnosticoService {
     return diagnostico ? toHistoricoDTO(diagnostico) : null;
   }
 
+  async obterImagem(id: number, userId: string): Promise<{ body: ReadableStream; contentType: string } | null> {
+    const own = await this.diagnosticoRepository.buscarPorId(id, userId);
+    const external = own ? null : await this.diagnosticoRepository.buscarExterna(id, userId);
+    const key = own?.imagemKey ?? external?.diagnostico.imagemKey;
+    if (!key || !this.storageService) return null;
+    return this.storageService.buscarImagem(key);
+  }
+
   async excluir(id: number, userId: string): Promise<boolean> {
-    return this.diagnosticoRepository.excluir(id, userId);
+    const diagnostico = await this.diagnosticoRepository.buscarPorId(id, userId);
+    if (!diagnostico) return false;
+
+    const removido = await this.diagnosticoRepository.excluir(id, userId);
+    if (removido && diagnostico.imagemKey && this.storageService) {
+      await this.storageService.excluirImagem(diagnostico.imagemKey);
+    }
+    return removido;
   }
 }
 

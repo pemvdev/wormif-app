@@ -35,7 +35,10 @@ export class Diagnostico {
     public caracteristicas: string[],
     public habitat: string,
     public userId: string | null = null,
-    public imagemKey: string | null = null
+    public imagemKey: string | null = null,
+    public latitude: number | null = null,
+    public longitude: number | null = null,
+    public localizacaoLabel: string | null = null
   ) {}
 
   processar(): void {
